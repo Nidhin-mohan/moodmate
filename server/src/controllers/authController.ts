@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import User from "../models/userModel";
 import { generateToken } from "../config/jwt";
-import CustomError from "../utils/custumeError";
 import { HTTP_STATUS, MESSAGES } from "../constants/httpStatusCodes";
+import { logger } from "../utils/logger"; // Adjust the path as necessary
+import CustomError from "../utils/custumeError";
 
 // Register a user
 export const registerUser = async (
@@ -10,22 +11,30 @@ export const registerUser = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const taskName = "User Registration";
+  logger.start(taskName);
+
   try {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      console.log("first", name, email, password);
+      logger.error(
+        taskName,
+        "Missing fields: " + JSON.stringify({ name, email, password })
+      );
       throw new CustomError("All fields are required", 400);
     }
 
     const userExists = await User.findOne({ email });
     if (userExists) {
+      logger.error(taskName, "User already exists: " + email);
       throw new CustomError("User already exists", 400);
     }
 
     const user = await User.create({ name, email, password });
     const token = generateToken(user._id);
 
+    logger.complete(taskName);
     res.status(HTTP_STATUS.CREATED).json({
       success: true,
       message: MESSAGES.USER_CREATED,
@@ -37,6 +46,7 @@ export const registerUser = async (
       },
     });
   } catch (error) {
+    logger.error(taskName, (error as Error).message);
     next(error);
   }
 };
@@ -47,20 +57,29 @@ export const loginUser = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const taskName = "User Login";
+  logger.start(taskName);
+
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
+      logger.error(
+        taskName,
+        "Missing fields: " + JSON.stringify({ email, password })
+      );
       throw new CustomError("Email and password are required", 400);
     }
 
     const user = await User.findOne({ email });
     if (!user || !(await user.matchPassword(password))) {
+      logger.error(taskName, "Invalid credentials for email: " + email);
       throw new CustomError("Invalid email or password", 401);
     }
 
     const token = generateToken(user._id);
 
+    logger.complete(taskName);
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: MESSAGES.LOGIN_SUCCESS,
@@ -71,6 +90,7 @@ export const loginUser = async (
       },
     });
   } catch (error) {
+    logger.error(taskName, (error as Error).message);
     next(error);
   }
 };
@@ -81,22 +101,28 @@ export const getUserProfile = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const taskName = "Get User Profile";
+  logger.start(taskName);
+
   try {
     const user = await User.findById(req?.user?._id).select("-password");
     if (!user) {
+      logger.error(taskName, "User not found for ID: " + req.user._id);
       throw new CustomError("User not found", 404);
     }
-
-      res.status(HTTP_STATUS.OK).json({
-        success: true,
-        message: MESSAGES.USER_RETRIEVED,
-        data: {
-          userId: user._id,
-          name: user.name,
-          email: user.email,
-        },
-      });
+    
+    logger.complete(taskName);
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      message: MESSAGES.USER_RETRIEVED,
+      data: {
+        userId: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
   } catch (error) {
+    logger.error(taskName, (error as Error).message);
     next(error);
   }
 };
