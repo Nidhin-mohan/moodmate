@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import CustomError from "../utils/custumeError";
+import { HTTP_STATUS } from "../constants/httpStatusCodes";
+import { logger } from "../utils/logger";
 
 // Middleware to handle not found routes
 export const notFound = (
@@ -18,11 +20,22 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ): void => {
-  const statusCode = (err as CustomError).statusCode || 500;
+  const statusCode =
+    (err as CustomError).statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR;
+
+  // Optionally log errors for debugging in development
+  if (process.env.NODE_ENV !== "production") {
+    logger.error("Error Stack:", err.stack || "No stack trace available");
+  }
+
+  // Example: Send error details to an external service
+  // logErrorToService(err0);
 
   res.status(statusCode).json({
     success: false,
     message: err.message || "Internal Server Error",
-    stack: process.env.NODE_ENV === "production" ? null : err.stack,
+    errorCode: (err as CustomError).errorCode || null,
+    stack: process.env.NODE_ENV === "production" ? undefined : err.stack,
   });
 };
+

@@ -1,9 +1,11 @@
 import { Request, Response, NextFunction } from "express";
+import { z } from "zod";
 import User from "../models/userModel";
 import { generateToken } from "../config/jwt";
 import { HTTP_STATUS, MESSAGES } from "../constants/httpStatusCodes";
-import { logger } from "../utils/logger"; // Adjust the path as necessary
+import { logger } from "../utils/logger";
 import CustomError from "../utils/custumeError";
+import { loginSchema, registerSchema } from "../validations/userValidation";
 
 // Register a user
 export const registerUser = async (
@@ -15,15 +17,7 @@ export const registerUser = async (
   logger.start(taskName);
 
   try {
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-      logger.error(
-        taskName,
-        "Missing fields: " + JSON.stringify({ name, email, password })
-      );
-      throw new CustomError("All fields are required", 400);
-    }
+    const { name, email, password } = registerSchema.parse(req.body);
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -61,15 +55,7 @@ export const loginUser = async (
   logger.start(taskName);
 
   try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      logger.error(
-        taskName,
-        "Missing fields: " + JSON.stringify({ email, password })
-      );
-      throw new CustomError("Email and password are required", 400);
-    }
+    const { email, password } = loginSchema.parse(req.body);
 
     const user = await User.findOne({ email });
     if (!user || !(await user.matchPassword(password))) {
@@ -110,7 +96,7 @@ export const getUserProfile = async (
       logger.error(taskName, "User not found for ID: " + req.user._id);
       throw new CustomError("User not found", 404);
     }
-    
+
     logger.complete(taskName);
     res.status(HTTP_STATUS.OK).json({
       success: true,
