@@ -1,11 +1,14 @@
+// controllers/authController.ts
+
 import { Request, Response, NextFunction } from "express";
-import { z } from "zod";
-import User from "../models/userModel";
-import { generateToken } from "../config/jwt";
-import { HTTP_STATUS, MESSAGES } from "../constants/httpStatusCodes";
 import { logger } from "../utils/logger";
-import CustomError from "../utils/custumeError";
-import { loginSchema, registerSchema } from "../validations/userValidation";
+import { HTTP_STATUS, MESSAGES } from "../constants/httpStatusCodes";
+import { registerSchema, loginSchema } from "../validations/userValidation";
+import {
+  registerUserService,
+  loginUserService,
+  getUserProfileService,
+} from "../services/authService";
 
 // Register a user
 export const registerUser = async (
@@ -18,26 +21,13 @@ export const registerUser = async (
 
   try {
     const { name, email, password } = registerSchema.parse(req.body);
-
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      logger.error(taskName, "User already exists: " + email);
-      throw new CustomError("User already exists", 400);
-    }
-
-    const user = await User.create({ name, email, password });
-    const token = generateToken(user._id);
+    const userData = await registerUserService(name, email, password);
 
     logger.complete(taskName);
     res.status(HTTP_STATUS.CREATED).json({
       success: true,
       message: MESSAGES.USER_CREATED,
-      data: {
-        userId: user._id,
-        name: user.name,
-        email: user.email,
-        token,
-      },
+      data: userData,
     });
   } catch (error) {
     logger.error(taskName, (error as Error).message);
@@ -56,24 +46,13 @@ export const loginUser = async (
 
   try {
     const { email, password } = loginSchema.parse(req.body);
-
-    const user = await User.findOne({ email });
-    if (!user || !(await user.matchPassword(password))) {
-      logger.error(taskName, "Invalid credentials for email: " + email);
-      throw new CustomError("Invalid email or password", 401);
-    }
-
-    const token = generateToken(user._id);
+    const userData = await loginUserService(email, password);
 
     logger.complete(taskName);
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: MESSAGES.LOGIN_SUCCESS,
-      data: {
-        userId: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      data: userData,
     });
   } catch (error) {
     logger.error(taskName, (error as Error).message);
@@ -91,21 +70,14 @@ export const getUserProfile = async (
   logger.start(taskName);
 
   try {
-    const user = await User.findById(req?.user?._id).select("-password");
-    if (!user) {
-      logger.error(taskName, "User not found for ID: " + req.user._id);
-      throw new CustomError("User not found", 404);
-    }
+    const userId = req.user?._id.toString();
+    const userData = await getUserProfileService(userId);
 
     logger.complete(taskName);
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: MESSAGES.USER_RETRIEVED,
-      data: {
-        userId: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      data: userData,
     });
   } catch (error) {
     logger.error(taskName, (error as Error).message);
