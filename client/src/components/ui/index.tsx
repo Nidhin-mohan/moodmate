@@ -8,4 +8,4 @@ export {
   CardDescription,
   CardContent,
 } from "./card"; // Export all Card-related components
-export {  Input } from "./input"; // Export Input as default
+export {  Input } from "./input"; // Export Input as defaul

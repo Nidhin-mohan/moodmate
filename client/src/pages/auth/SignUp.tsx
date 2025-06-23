@@ -1,17 +1,44 @@
-import React, { useState } from "react";
+import  { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { signup } from "@/services/authServices";
+import { showToast } from "@/utils/toast";
 
 const SignUp = () => {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleSignUp = () => {
-    // Handle sign-up logic
-    navigate("/login");
-  };
+   const handleSignUp = async () => {
+     try {
+
+      const response = await signup({ name, email, password });
+
+      // //  Handle successful signup
+       if (response.success) {
+       showToast.success("user Registered succsessfully !");
+
+         navigate("/login"); // Redirect to the login page
+       } else {
+       showToast.error("user Registration failed !");
+
+         console.log("error")
+         // setError(response.message);
+       }
+     } catch (err) {
+       showToast.error("user Registration failed !");
+
+      console.log("errror")
+       // Handle errors
+      //  if (axios.isAxiosError(err)) {
+      //   //  setError(err.response?.data?.message || "Signup failed");
+      //  } else {
+      //   //  setError("An unexpected error occurred");
+      //  }
+     }
+   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-gray-800 via-indigo-700 to-purple-900 text-gray-200 p-6">
@@ -24,6 +51,14 @@ const SignUp = () => {
         </p>
 
         {/* Input Fields */}
+        <div className="mb-4">
+          <Input
+            placeholder="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="bg-white/20 text-gray-200 placeholder-gray-300 rounded-lg p-4"
+          />
+        </div>
         <div className="mb-4">
           <Input
             placeholder="Email"

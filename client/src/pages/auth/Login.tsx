@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import api from "@/api";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -10,9 +11,14 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = () => {
+  const handleLogin = async() => {
     // Dummy token logic
-    login("dummy-token");
+     const response = await api.post("/auth/login", {
+       name,
+       email,
+       password,
+     });
+    login(response.data.token);
     navigate("/dashboard");
   };
 
