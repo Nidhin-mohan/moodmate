@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./server
+    container_name: moodmate-backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./server/.env
+    depends_on:
+      - mongo
+
+  frontend:
+    build: ./client
+    container_name: moodmate-frontend
+    ports:
+         - "3000:80" # host:container
+    stdin_open: true
+    tty: true
+    depends_on:
+      - backend
+
+  mongo:
+    image: mongo:5
+    container_name: moodmate-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
