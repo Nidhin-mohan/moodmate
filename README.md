@@ -29,4 +29,5 @@ Therapists can write blogs on mental health, and users can engage with these blo
   - AI integration for mood suggestions and emotional well-being tips.
 
 ## Project Structure
+incoming
 
