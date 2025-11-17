@@ -1,15 +1,8 @@
-import AppRoutes from './routes/AppRoutes';
+import { AppRouter } from "./routes/AppRouter";
+
 
 function App() {
-
-
- return (
-   <>
-     {/* <Button variant="destructive">Click me</Button> */}
-     <AppRoutes />
-   </>
- );
-
+  return <AppRouter />;
 }
 
-export default App
+export default App;

@@ -1,0 +1,35 @@
+[
+  {
+    "path": "/",
+    "component": "Home",
+    "roles": ["public"]
+  },
+  {
+    "path": "/login",
+    "component": "Login",
+    "roles": ["public"]
+  },
+  {
+    "path": "/signup",
+    "component": "SignUp",
+    "roles": ["public"]
+  },
+  {
+    "path": "/dashboard",
+    "component": "Dashboard",
+    "roles": ["user"],
+    "layout": "MainLayout"
+  },
+  {
+    "path": "/mood-tracking",
+    "component": "MoodTrackingForm",
+    "roles": ["user"],
+    "layout": "MainLayout"
+  },
+  {
+    "path": "/profile",
+    "component": "UserProfile",
+    "roles": ["user"],
+    "layout": "MainLayout"
+  }
+]
