@@ -1,233 +1,371 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Toggle } from "@/components/ui/toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider"; 
+import { Switch } from "@/components/ui/switch"; 
 import { showToast } from "@/utils/toast";
 import api from "@/api";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { 
+  Smile, Frown, Meh, Angry, Zap, Activity,
+  MapPin, Users, Calendar, Moon
+} from "lucide-react";
 
-// Define mood options
-const moods = [
-  "Happy",
-  "Sad",
-  "Anxious",
-  "Stressed",
-  "Excited",
-  "Tired",
-] as const;
+// --- Configuration: Mood Hierarchy ---
+const MOOD_OPTIONS = [
+  { 
+    label: "Happy", 
+    icon: Smile, 
+    color: "text-green-500", 
+    bg: "bg-green-50", 
+    border: "border-green-200",
+    subMoods: ["Optimistic", "Content", "Proud", "Grateful", "Relieved"] 
+  },
+  { 
+    label: "Excited", 
+    icon: Zap, 
+    color: "text-yellow-500", 
+    bg: "bg-yellow-50", 
+    border: "border-yellow-200",
+    subMoods: ["Energetic", "Motivated", "Manic", "Curious", "Hopeful"]
+  },
+  { 
+    label: "Neutral", 
+    icon: Meh, 
+    color: "text-slate-500", 
+    bg: "bg-slate-50", 
+    border: "border-slate-200",
+    subMoods: ["Calm", "Bored", "Indifferent", "Numb", "Tired"]
+  },
+  { 
+    label: "Sad", 
+    icon: Frown, 
+    color: "text-blue-500", 
+    bg: "bg-blue-50", 
+    border: "border-blue-200",
+    subMoods: ["Lonely", "Depressed", "Disappointed", "Hurt", "Grieving"]
+  },
+  { 
+    label: "Anxious", 
+    icon: Activity, 
+    color: "text-purple-500", 
+    bg: "bg-purple-50", 
+    border: "border-purple-200",
+    subMoods: ["Stressed", "Overwhelmed", "Nervous", "Insecure", "Panic"]
+  },
+  { 
+    label: "Angry", 
+    icon: Angry, 
+    color: "text-red-500", 
+    bg: "bg-red-50", 
+    border: "border-red-200",
+    subMoods: ["Frustrated", "Irritated", "Jealous", "Resentful", "Rage"]
+  },
+];
 
-// Define validation schema
+// --- Validation Schema ---
 const moodSchema = z.object({
-  mood: z.enum(moods),
-  moodScale: z.coerce.number().min(1).max(10),
-  moodNote: z.string().optional(),
-  sleepHours: z.coerce.number().min(0).max(12),
+  // Emotions
+  mood: z.string().min(1, "Please select a mood"),
+  specificEmotion: z.string().optional(),
+  intensity: z.number().min(1).max(10),
+  energyLevel: z.number().min(1).max(10),
+  
+  // Context
+  tagsPeople: z.string().optional(),
+  tagsPlaces: z.string().optional(),
+  tagsEvents: z.string().optional(),
+
+  // Physiology
+  sleepHours: z.number().min(0).max(24),
+  sleepQuality: z.number().min(1).max(5),
   exercise: z.boolean(),
-  diet: z.enum(["Healthy", "Unhealthy", "Skipped Meals"]),
-  socialInteraction: z.enum(["None", "Friends", "Family", "Work Event"]),
-  workStress: z.enum(["None", "Mild", "High"]),
-  weather: z.enum(["Sunny", "Rainy", "Cloudy", "Snowy"]),
-  screenTime: z.coerce.number().min(0).max(24),
-  musicListened: z.string().optional(),
-  gratitudeEntry: z.string().optional(),
-  goalProgress: z.enum(["On Track", "Falling Behind", "Not Set"]),
-  triggerEvents: z.array(z.string()).optional(),
+  
+  // Journal
+  notes: z.string().optional(),
+  reflections: z.string().optional(),
 });
 
 type MoodFormData = z.infer<typeof moodSchema>;
 
 export default function MoodTrackingForm() {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const {
     register,
+    control,
     handleSubmit,
     setValue,
-    // watch,
+    watch,
     formState: { errors },
   } = useForm<MoodFormData>({
     resolver: zodResolver(moodSchema),
+    defaultValues: {
+      intensity: 5,
+      energyLevel: 5,
+      sleepHours: 7,
+      sleepQuality: 3,
+      exercise: false,
+    }
   });
 
+  const selectedMoodLabel = watch("mood");
+  const selectedSpecific = watch("specificEmotion");
+  
+  // Find the config object for the currently selected mood
+  const currentMoodObj = MOOD_OPTIONS.find(m => m.label === selectedMoodLabel);
+
   const onSubmit = async (data: MoodFormData) => {
+    setIsSubmitting(true);
     try {
-      await api.post("/mood/track", data);
-      showToast.success("Mood logged successfully!");
+      const payload = { ...data, date: new Date().toISOString() };
+      await api.post("/mood/track", payload);
+      showToast.success("Check-in saved successfully!");
     } catch (error) {
-      showToast.error("Failed to log mood");
+      console.error(error);
+      showToast.error("Failed to save check-in.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow-md ml-40 mr-40">
-      <h2 className="text-lg font-semibold">Log Your Mood</h2>
+    <div className="max-w-3xl mx-auto py-8 px-4">
+      
+      {/* Page Header */}
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-bold text-slate-800">Daily Check-in</h1>
+        <p className="text-slate-500">Take a moment to reflect on your day.</p>
+      </div>
 
-      <Toggle onPressedChange={() => setIsExpanded(!isExpanded)}>
-        {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-      </Toggle>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        
+        {/* --- Section 1: Emotional State --- */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <Smile size={20} className="text-teal-600"/> Emotional State
+          </h2>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
-        {/* Basic Mood Input */}
-        <label>Mood:</label>
-        <Select
-          onValueChange={(value) =>
-            setValue("mood", value as MoodFormData["mood"])
-          }
+          {/* Parent Mood Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+            {MOOD_OPTIONS.map((m) => {
+              const isSelected = selectedMoodLabel === m.label;
+              return (
+                <button
+                  key={m.label}
+                  type="button"
+                  onClick={() => {
+                    setValue("mood", m.label);
+                    setValue("specificEmotion", ""); // Reset sub-mood on change
+                  }}
+                  className={`
+                    flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all
+                    ${isSelected 
+                      ? `${m.bg} ${m.border} ring-2 ring-offset-1 ring-${m.color.split('-')[1]}-400` 
+                      : "bg-white border-slate-100 hover:border-slate-300 hover:bg-slate-50"}
+                  `}
+                >
+                  <m.icon size={28} className={`mb-2 ${isSelected ? m.color : "text-slate-400"}`} />
+                  <span className={`text-sm font-medium ${isSelected ? "text-slate-900" : "text-slate-500"}`}>{m.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          {errors.mood && <p className="text-red-500 text-sm text-center mb-4">{errors.mood.message}</p>}
+
+          {/* Child Mood Chips (Specific Emotion) */}
+          {currentMoodObj && (
+             <div className="mb-8 animate-in fade-in slide-in-from-top-2 duration-300 bg-slate-50 p-4 rounded-xl">
+               <label className="text-sm font-medium text-slate-600 mb-3 block">
+                 Let's get specific... (Optional)
+               </label>
+               <div className="flex flex-wrap gap-2">
+                 {currentMoodObj.subMoods.map((sub) => {
+                   const isSubSelected = selectedSpecific === sub;
+                   return (
+                     <button
+                       key={sub}
+                       type="button"
+                       onClick={() => setValue("specificEmotion", sub)}
+                       className={`
+                         px-4 py-2 rounded-full text-sm font-medium transition-all border
+                         ${isSubSelected 
+                           ? "bg-slate-800 text-white border-slate-800 shadow-md transform scale-105" 
+                           : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"}
+                       `}
+                     >
+                       {sub}
+                     </button>
+                   )
+                 })}
+               </div>
+             </div>
+          )}
+
+          {/* Sliders for Intensity & Energy */}
+          <div className="grid md:grid-cols-2 gap-8 pt-2 border-t border-slate-100">
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-4">
+                Mood Intensity (1-10)
+              </label>
+              <Controller
+                control={control}
+                name="intensity"
+                render={({ field }) => (
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm font-bold text-slate-300">1</span>
+                    <Slider
+                      defaultValue={[field.value]}
+                      max={10}
+                      min={1}
+                      step={1}
+                      onValueChange={(vals : any[]) => field.onChange(vals[0])}
+                      className="flex-1"
+                    />
+                    <span className="text-sm font-bold text-teal-600 w-6 text-center">{field.value}</span>
+                  </div>
+                )}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-600 mb-4">
+                Energy Level (1-10)
+              </label>
+              <Controller
+                control={control}
+                name="energyLevel"
+                render={({ field }) => (
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm font-bold text-slate-300">1</span>
+                    <Slider
+                      defaultValue={[field.value]}
+                      max={10}
+                      min={1}
+                      step={1}
+                      onValueChange={(vals : any[]) => field.onChange(vals[0])}
+                      className="flex-1"
+                    />
+                    <span className="text-sm font-bold text-yellow-600 w-6 text-center">{field.value}</span>
+                  </div>
+                )}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* --- Section 2: Context --- */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+           <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <MapPin size={20} className="text-teal-600"/> Context
+          </h2>
+          
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-sm font-medium text-slate-600 mb-1 flex gap-1 items-center">
+                <Users size={14} /> Who were you with?
+              </label>
+              <Input placeholder="e.g. Friends, Alone" {...register("tagsPeople")} className="bg-slate-50" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-600 mb-1 flex gap-1 items-center">
+                <MapPin size={14} /> Where were you?
+              </label>
+              <Input placeholder="e.g. Home, Work" {...register("tagsPlaces")} className="bg-slate-50" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-600 mb-1 flex gap-1 items-center">
+                <Calendar size={14} /> What were you doing?
+              </label>
+              <Input placeholder="e.g. Working, Relaxing" {...register("tagsEvents")} className="bg-slate-50" />
+            </div>
+          </div>
+        </div>
+
+        {/* --- Section 3: Physiology --- */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <Moon size={20} className="text-teal-600"/> Body & Health
+          </h2>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Sleep Inputs */}
+            <div className="space-y-4">
+               <div>
+                  <label className="text-sm font-medium text-slate-600">Hours Slept</label>
+                  <Input type="number" step="0.5" {...register("sleepHours", { valueAsNumber: true })} className="bg-slate-50 mt-1"/>
+               </div>
+               <div>
+                  <label className="text-sm font-medium text-slate-600 mb-2 block">Sleep Quality (1-5)</label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((stars) => (
+                       <button
+                         key={stars}
+                         type="button"
+                         onClick={() => setValue("sleepQuality", stars)}
+                         className={`h-8 w-8 rounded-full text-sm font-bold transition-colors ${watch("sleepQuality") === stars ? "bg-indigo-600 text-white shadow-md" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                       >
+                         {stars}
+                       </button>
+                    ))}
+                  </div>
+               </div>
+            </div>
+
+            {/* Exercise Toggle */}
+            <div className="flex flex-col justify-center p-4 bg-slate-50 rounded-xl border border-slate-100">
+               <div className="flex items-center justify-between mb-2">
+                  <label className="font-medium text-slate-700">Did you exercise today?</label>
+                  <Controller
+                    control={control}
+                    name="exercise"
+                    render={({ field }) => (
+                      <Switch 
+                        checked={field.value} 
+                        onCheckedChange={field.onChange} 
+                      />
+                    )}
+                  />
+               </div>
+               <p className="text-xs text-slate-500">Even a 10 min walk counts!</p>
+            </div>
+          </div>
+        </div>
+
+        {/* --- Section 4: Journaling --- */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4">Journal & Reflections</h2>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-slate-600 mb-1 block">Notes / What's on your mind?</label>
+              <Textarea 
+                placeholder="Write freely here..." 
+                className="bg-slate-50 min-h-[100px] border-slate-200 focus:border-teal-500 focus:ring-teal-500/20" 
+                {...register("notes")} 
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-600 mb-1 block">Key Takeaways / Gratitude</label>
+              <Textarea 
+                placeholder="One thing I learned today..." 
+                className="bg-slate-50 min-h-[80px] border-slate-200 focus:border-teal-500 focus:ring-teal-500/20" 
+                {...register("reflections")} 
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* --- Submit Button --- */}
+        <Button 
+          type="submit" 
+          disabled={isSubmitting}
+          className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white text-lg font-semibold rounded-xl shadow-lg shadow-teal-200/50 transition-all hover:scale-[1.01]"
         >
-          <SelectTrigger>
-            <SelectValue placeholder="Select Mood" />
-          </SelectTrigger>
-          <SelectContent>
-            {moods.map((mood) => (
-              <SelectItem key={mood} value={mood}>
-                {mood}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {errors.mood && <p className="text-red-500">{errors.mood.message}</p>}
-
-        <label>Mood Scale (1-10):</label>
-        <Input type="number" {...register("moodScale")} />
-        {errors.moodScale && (
-          <p className="text-red-500">{errors.moodScale.message}</p>
-        )}
-
-        <label>Notes:</label>
-        <Textarea {...register("moodNote")} />
-
-        {/* Expand for detailed logging */}
-        {isExpanded && (
-          <>
-            <label>Sleep Hours:</label>
-            <Input type="number" {...register("sleepHours")} />
-            {errors.sleepHours && (
-              <p className="text-red-500">{errors.sleepHours.message}</p>
-            )}
-
-            <label>Exercise:</label>
-            <Checkbox
-              onCheckedChange={(checked) =>
-                setValue("exercise", checked as boolean)
-              }
-            />
-
-            <label>Diet:</label>
-            <Select
-              onValueChange={(value) =>
-                setValue("diet", value as MoodFormData["diet"])
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Diet" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Healthy">Healthy</SelectItem>
-                <SelectItem value="Unhealthy">Unhealthy</SelectItem>
-                <SelectItem value="Skipped Meals">Skipped Meals</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <label>Social Interaction:</label>
-            <Select
-              onValueChange={(value) =>
-                setValue(
-                  "socialInteraction",
-                  value as MoodFormData["socialInteraction"]
-                )
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Interaction" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="None">None</SelectItem>
-                <SelectItem value="Friends">Friends</SelectItem>
-                <SelectItem value="Family">Family</SelectItem>
-                <SelectItem value="Work Event">Work Event</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <label>Work Stress:</label>
-            <Select
-              onValueChange={(value) =>
-                setValue("workStress", value as MoodFormData["workStress"])
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Work Stress" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="None">None</SelectItem>
-                <SelectItem value="Mild">Mild</SelectItem>
-                <SelectItem value="High">High</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <label>Weather:</label>
-            <Select
-              onValueChange={(value) =>
-                setValue("weather", value as MoodFormData["weather"])
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Weather" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Sunny">Sunny</SelectItem>
-                <SelectItem value="Rainy">Rainy</SelectItem>
-                <SelectItem value="Cloudy">Cloudy</SelectItem>
-                <SelectItem value="Snowy">Snowy</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <label>Screen Time (in hours):</label>
-            <Input type="number" {...register("screenTime")} />
-            {errors.screenTime && (
-              <p className="text-red-500">{errors.screenTime.message}</p>
-            )}
-
-            <label>Music Listened:</label>
-            <Textarea {...register("musicListened")} />
-
-            <label>Gratitude Entry:</label>
-            <Textarea {...register("gratitudeEntry")} />
-
-            <label>Goal Progress:</label>
-            <Select
-              onValueChange={(value) =>
-                setValue("goalProgress", value as MoodFormData["goalProgress"])
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select Goal Progress" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="On Track">On Track</SelectItem>
-                <SelectItem value="Falling Behind">Falling Behind</SelectItem>
-                <SelectItem value="Not Set">Not Set</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <label>Trigger Events:</label>
-            <Textarea {...register("triggerEvents")} />
-          </>
-        )}
-
-        <Button type="submit" className="mt-4 w-full">
-          Submit Mood
+          {isSubmitting ? "Saving..." : "Save Check-in"}
         </Button>
+
       </form>
     </div>
   );

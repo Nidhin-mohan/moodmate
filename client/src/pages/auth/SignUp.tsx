@@ -1,102 +1,144 @@
-import  { useState } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { signup } from "@/services/authServices";
 import { showToast } from "@/utils/toast";
+import { Loader2 } from "lucide-react"; // Assuming you have lucide-react, or use any spinner icon
 
 const SignUp = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-   const handleSignUp = async () => {
-     try {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-      const response = await signup({ name, email, password });
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault(); // Prevents page reload
+    
+    // Basic Client-side validation
+    if (!formData.name || !formData.email || !formData.password) {
+        showToast.error("Please fill in all fields.");
+        return;
+    }
 
-      // //  Handle successful signup
-       if (response.success) {
-       showToast.success("user Registered succsessfully !");
+    setIsLoading(true);
 
-         navigate("/login"); // Redirect to the login page
-       } else {
-       showToast.error("user Registration failed !");
+    try {
+      const response = await signup(formData);
 
-         console.log("error")
-         // setError(response.message);
-       }
-     } catch (err) {
-       showToast.error("user Registration failed !");
-
-      console.log("errror")
-       // Handle errors
-      //  if (axios.isAxiosError(err)) {
-      //   //  setError(err.response?.data?.message || "Signup failed");
-      //  } else {
-      //   //  setError("An unexpected error occurred");
-      //  }
-     }
-   };
+      if (response.success) {
+        showToast.success("Welcome to MoodMate! Please log in.");
+        navigate("/login");
+      } else {
+        showToast.error(response.message || "Registration failed. Try again.");
+      }
+    } catch (err) {
+      showToast.error("Something went wrong. Please try again later.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-gray-800 via-indigo-700 to-purple-900 text-gray-200 p-6">
-      <div className="max-w-md w-full bg-white/10 p-8 rounded-xl shadow-lg backdrop-blur-lg">
-        <h1 className="text-4xl font-serif text-indigo-400 text-center mb-6">
-          Create Your Account
-        </h1>
-        <p className="text-center text-lg text-gray-300 mb-6">
-          Join us and take the first step towards better mental health.
-        </p>
+    // 1. Theme Consistency: Using the same Gradient background as Home
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 via-sky-50 to-blue-100 p-6">
+      
+      {/* Glassmorphism Card Effect */}
+      <div className="w-full max-w-md bg-white/80 backdrop-blur-xl shadow-2xl shadow-teal-900/5 rounded-3xl p-8 sm:p-10 border border-white/50">
 
-        {/* Input Fields */}
-        <div className="mb-4">
-          <Input
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="bg-white/20 text-gray-200 placeholder-gray-300 rounded-lg p-4"
-          />
-        </div>
-        <div className="mb-4">
-          <Input
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="bg-white/20 text-gray-200 placeholder-gray-300 rounded-lg p-4"
-          />
-        </div>
-        <div className="mb-6">
-          <Input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="bg-white/20 text-gray-200 placeholder-gray-300 rounded-lg p-4"
-          />
-        </div>
-
-        {/* Sign Up Button */}
-        <Button
-          onClick={handleSignUp}
-          className="w-full bg-indigo-600 text-white py-2 px-6 rounded-full hover:bg-indigo-800 focus:ring focus:ring-indigo-200"
-        >
-          Sign Up
-        </Button>
-
-        {/* Already have an account? */}
-        <div className="mt-6 text-center">
-          <p className="text-gray-300">
-            Already have an account?{" "}
-            <a
-              href="/login"
-              className="text-indigo-400 hover:underline text-lg transition duration-300 ease-in-out"
-            >
-              Log In
-            </a>
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-slate-800 mb-2">
+            Join <span className="text-teal-600">MoodMate</span>
+          </h1>
+          <p className="text-slate-500">
+            Start your journey towards better mental wellbeing today.
           </p>
         </div>
+
+        <form onSubmit={handleSignUp} className="space-y-5">
+          {/* Name */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700 ml-1">
+              Full Name
+            </label>
+            <Input
+              name="name"
+              placeholder="John Doe"
+              value={formData.name}
+              onChange={handleChange}
+              disabled={isLoading}
+              className="h-12 rounded-xl bg-white border-slate-200 focus:border-teal-500 focus:ring-teal-500/20 transition-all"
+            />
+          </div>
+
+          {/* Email */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700 ml-1">
+              Email Address
+            </label>
+            <Input
+              name="email"
+              placeholder="hello@example.com"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              disabled={isLoading}
+              className="h-12 rounded-xl bg-white border-slate-200 focus:border-teal-500 focus:ring-teal-500/20 transition-all"
+            />
+          </div>
+
+          {/* Password */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700 ml-1">
+              Password
+            </label>
+            <Input
+              name="password"
+              placeholder="••••••••"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              disabled={isLoading}
+              className="h-12 rounded-xl bg-white border-slate-200 focus:border-teal-500 focus:ring-teal-500/20 transition-all"
+            />
+          </div>
+
+          {/* Submit Button with Loading State */}
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full h-12 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-lg shadow-lg shadow-teal-200/50 transition-all hover:scale-[1.02] active:scale-[0.98] mt-2"
+          >
+            {isLoading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Creating Account...</span>
+              </div>
+            ) : (
+              "Sign Up"
+            )}
+          </Button>
+        </form>
+
+        {/* Footer / Login Link */}
+        <p className="text-center text-slate-500 text-sm mt-8">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="text-teal-600 font-semibold hover:text-teal-700 hover:underline transition-colors"
+          >
+            Log In
+          </Link>
+        </p>
       </div>
     </div>
   );
