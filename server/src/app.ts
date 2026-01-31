@@ -4,6 +4,7 @@ import express, { Application } from "express";
 import cors from "cors";
 import morgan from "morgan";
 import authRoutes from "./routes/authRoutes";
+import moodLogRoutes from "./routes/moodLogRoutes";
 import { errorHandler, notFound } from "./middlewares/errorMiddleware";
 
 const app: Application = express();
@@ -29,6 +30,7 @@ app.get("/", (req, res) => {
   });
 })
 app.use("/auth", authRoutes);
+app.use("/mood", moodLogRoutes);
 
 // Error handling
 app.use(notFound);
