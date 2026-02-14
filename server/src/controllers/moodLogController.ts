@@ -2,6 +2,10 @@ import { Request, Response, NextFunction } from "express";
 import { logger } from "../utils/logger";
 import { HTTP_STATUS } from "../constants/httpStatusCodes";
 import {
+  createMoodLogSchema,
+  updateMoodLogSchema,
+} from "../validations/moodLogValidation";
+import {
   createMoodService,
   getAllMoodsService,
   getMoodByIdService,
@@ -22,7 +26,8 @@ export const createMood = async (
   logger.start(taskName);
 
   try {
-    const newLog = await createMoodService(req.user!._id, req.body);
+    const data = createMoodLogSchema.parse(req.body);
+    const newLog = await createMoodService(req.user!._id, data);
 
     logger.complete(taskName);
     res.status(HTTP_STATUS.CREATED).json({
@@ -103,7 +108,8 @@ export const updateMood = async (
   logger.start(taskName);
 
   try {
-    const log = await updateMoodService(req.params.id, req.user!._id, req.body);
+    const data = updateMoodLogSchema.parse(req.body);
+    const log = await updateMoodService(req.params.id, req.user!._id, data);
 
     logger.complete(taskName);
     res.status(HTTP_STATUS.OK).json({

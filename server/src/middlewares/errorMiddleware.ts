@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import CustomError from "../utils/custumeError";
+import { ZodError } from "zod";
+import CustomError from "../utils/customError";
 import { HTTP_STATUS } from "../constants/httpStatusCodes";
 import { logger } from "../utils/logger";
 
@@ -15,21 +16,32 @@ export const notFound = (
 
 // Middleware to handle errors
 export const errorHandler = (
-  err: Error | CustomError,
+  err: Error | CustomError | ZodError,
   req: Request,
   res: Response,
   next: NextFunction
 ): void => {
+  // Handle Zod validation errors
+  if (err instanceof ZodError) {
+    const errors = err.errors.map((e) => ({
+      field: e.path.join("."),
+      message: e.message,
+    }));
+
+    res.status(HTTP_STATUS.BAD_REQUEST).json({
+      success: false,
+      message: "Validation failed",
+      errors,
+    });
+    return;
+  }
+
   const statusCode =
     (err as CustomError).statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR;
 
-  // Optionally log errors for debugging in development
   if (process.env.NODE_ENV !== "production") {
     logger.error("Error Stack:", err.stack || "No stack trace available");
   }
-
-  // Example: Send error details to an external service
-  // logErrorToService(err0);
 
   res.status(statusCode).json({
     success: false,
@@ -38,4 +50,3 @@ export const errorHandler = (
     stack: process.env.NODE_ENV === "production" ? undefined : err.stack,
   });
 };
-

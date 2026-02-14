@@ -2,7 +2,7 @@
 
 import User from "../models/userModel";
 import { generateToken } from "../config/jwt";
-import CustomError from "../utils/custumeError";
+import CustomError from "../utils/customError";
 
 export const registerUserService = async (
   name: string,
