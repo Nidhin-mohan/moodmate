@@ -9,13 +9,14 @@ import { errorHandler, notFound } from "./middlewares/errorMiddleware";
 
 const app: Application = express();
 
-const corsOptions = {
-  origin: "http://localhost:5173", // Replace with your frontend origin
-  credentials: true, // Allow credentials
-};
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim())
+  : ["http://localhost:5173"];
 
-// Middleware
-app.use(cors(corsOptions));
+const corsOptions = {
+  origin: allowedOrigins,
+  credentials: true,
+};
 
 // Middleware
 app.use(cors(corsOptions));
