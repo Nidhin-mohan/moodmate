@@ -1,3 +1,4 @@
+// routes/moodRoutes.ts
 import express from "express";
 import {
   createMood,
@@ -11,10 +12,8 @@ import { authentication } from "../middlewares/authMiddleware";
 
 const router = express.Router();
 
-// All routes require authentication
 router.use(authentication);
 
-// Stats route (must be before /:id to avoid conflict)
 router.get("/stats", getMoodStats);
 
 router.route("/")
