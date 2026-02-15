@@ -1,6 +1,5 @@
-import { Request, Response, NextFunction } from "express";
-import { logger } from "../utils/logger";
 import { HTTP_STATUS } from "../constants/httpStatusCodes";
+import { asyncHandler } from "../utils/asyncHandler";
 import {
   createMoodLogSchema,
   updateMoodLogSchema,
@@ -14,161 +13,69 @@ import {
   getMoodStatsService,
 } from "../services/moodLogService";
 
-// @desc    Create a new mood log
-// @route   POST /mood
-// @access  Private
-export const createMood = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const taskName = "Create Mood Log";
-  logger.start(taskName);
+// Compare this to the old version: no try/catch, no logger calls,
+// no next(error). The asyncHandler wrapper does all of that.
+// Each handler is now ONLY the unique logic for that route.
 
-  try {
-    const data = createMoodLogSchema.parse(req.body);
-    const newLog = await createMoodService(req.user!._id, data);
+export const createMood = asyncHandler("Create Mood Log", async (req, res) => {
+  const data = createMoodLogSchema.parse(req.body);
+  const newLog = await createMoodService(req.user!._id, data);
 
-    logger.complete(taskName);
-    res.status(HTTP_STATUS.CREATED).json({
-      success: true,
-      data: newLog,
-    });
-  } catch (error) {
-    logger.error(taskName, (error as Error).message);
-    next(error);
-  }
-};
+  res.status(HTTP_STATUS.CREATED).json({
+    success: true,
+    data: newLog,
+  });
+});
 
-// @desc    Get all mood logs for the current user (paginated)
-// @route   GET /mood
-// @access  Private
-export const getAllMoods = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const taskName = "Get All Moods";
-  logger.start(taskName);
+export const getAllMoods = asyncHandler("Get All Moods", async (req, res) => {
+  const result = await getAllMoodsService(req.user!._id, {
+    page: parseInt(req.query.page as string) || 1,
+    limit: parseInt(req.query.limit as string) || 20,
+    startDate: req.query.startDate as string,
+    endDate: req.query.endDate as string,
+    mood: req.query.mood as string,
+  });
 
-  try {
-    const result = await getAllMoodsService(req.user!._id, {
-      page: parseInt(req.query.page as string) || 1,
-      limit: parseInt(req.query.limit as string) || 20,
-      startDate: req.query.startDate as string,
-      endDate: req.query.endDate as string,
-      mood: req.query.mood as string,
-    });
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    ...result,
+  });
+});
 
-    logger.complete(taskName);
-    res.status(HTTP_STATUS.OK).json({
-      success: true,
-      ...result,
-    });
-  } catch (error) {
-    logger.error(taskName, (error as Error).message);
-    next(error);
-  }
-};
+export const getMoodById = asyncHandler("Get Mood By ID", async (req, res) => {
+  const log = await getMoodByIdService(req.params.id, req.user!._id);
 
-// @desc    Get a single mood log by ID
-// @route   GET /mood/:id
-// @access  Private
-export const getMoodById = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const taskName = "Get Mood By ID";
-  logger.start(taskName);
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    data: log,
+  });
+});
 
-  try {
-    const log = await getMoodByIdService(req.params.id, req.user!._id);
+export const updateMood = asyncHandler("Update Mood Log", async (req, res) => {
+  const data = updateMoodLogSchema.parse(req.body);
+  const log = await updateMoodService(req.params.id, req.user!._id, data);
 
-    logger.complete(taskName);
-    res.status(HTTP_STATUS.OK).json({
-      success: true,
-      data: log,
-    });
-  } catch (error) {
-    logger.error(taskName, (error as Error).message);
-    next(error);
-  }
-};
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    data: log,
+  });
+});
 
-// @desc    Update a mood log
-// @route   PUT /mood/:id
-// @access  Private
-export const updateMood = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const taskName = "Update Mood Log";
-  logger.start(taskName);
+export const deleteMood = asyncHandler("Delete Mood Log", async (req, res) => {
+  await deleteMoodService(req.params.id, req.user!._id);
 
-  try {
-    const data = updateMoodLogSchema.parse(req.body);
-    const log = await updateMoodService(req.params.id, req.user!._id, data);
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: "Mood log deleted",
+  });
+});
 
-    logger.complete(taskName);
-    res.status(HTTP_STATUS.OK).json({
-      success: true,
-      data: log,
-    });
-  } catch (error) {
-    logger.error(taskName, (error as Error).message);
-    next(error);
-  }
-};
+export const getMoodStats = asyncHandler("Get Mood Stats", async (req, res) => {
+  const days = parseInt(req.query.days as string) || 30;
+  const statsData = await getMoodStatsService(req.user!._id, days);
 
-// @desc    Delete a mood log
-// @route   DELETE /mood/:id
-// @access  Private
-export const deleteMood = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const taskName = "Delete Mood Log";
-  logger.start(taskName);
-
-  try {
-    await deleteMoodService(req.params.id, req.user!._id);
-
-    logger.complete(taskName);
-    res.status(HTTP_STATUS.OK).json({
-      success: true,
-      message: "Mood log deleted",
-    });
-  } catch (error) {
-    logger.error(taskName, (error as Error).message);
-    next(error);
-  }
-};
-
-// @desc    Get mood statistics for the current user
-// @route   GET /mood/stats
-// @access  Private
-export const getMoodStats = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const taskName = "Get Mood Stats";
-  logger.start(taskName);
-
-  try {
-    const days = parseInt(req.query.days as string) || 30;
-    const statsData = await getMoodStatsService(req.user!._id, days);
-
-    logger.complete(taskName);
-    res.status(HTTP_STATUS.OK).json({
-      success: true,
-      data: statsData,
-    });
-  } catch (error) {
-    logger.error(taskName, (error as Error).message);
-    next(error);
-  }
-};
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    data: statsData,
+  });
+});

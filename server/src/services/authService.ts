@@ -1,8 +1,10 @@
-// services/authService.ts
-
 import User from "../models/userModel";
 import { generateToken } from "../config/jwt";
-import CustomError from "../utils/customError";
+import {
+  ConflictError,
+  UnauthorizedError,
+  NotFoundError,
+} from "../utils/customError";
 
 export const registerUserService = async (
   name: string,
@@ -11,7 +13,7 @@ export const registerUserService = async (
 ): Promise<UserData> => {
   const userExists = await User.findOne({ email });
   if (userExists) {
-    throw new CustomError("User already exists", 400);
+    throw new ConflictError("User already exists");
   }
 
   const user = await User.create({ name, email, password });
@@ -31,7 +33,7 @@ export const loginUserService = async (
 ): Promise<UserData> => {
   const user = await User.findOne({ email });
   if (!user || !(await user.matchPassword(password))) {
-    throw new CustomError("Invalid email or password", 401);
+    throw new UnauthorizedError("Invalid email or password");
   }
 
   const token = generateToken(user._id);
@@ -48,7 +50,7 @@ export const getUserProfileService = async (
 ): Promise<UserData> => {
   const user = await User.findById(userId).select("-password");
   if (!user) {
-    throw new CustomError("User not found", 404);
+    throw new NotFoundError("User", userId);
   }
 
   return {

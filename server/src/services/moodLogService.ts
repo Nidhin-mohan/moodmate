@@ -1,10 +1,14 @@
 import { Types } from "mongoose";
-import MoodLog from "../models/moodLogModel";
-import CustomError from "../utils/customError";
+import MoodLog, { IMoodLog } from "../models/moodLogModel";
+import { NotFoundError } from "../utils/customError";
 import type {
   CreateMoodLogInput,
   UpdateMoodLogInput,
 } from "../validations/moodLogValidation";
+
+// These interfaces define the "contract" — the exact shape each
+// function promises to return. If you accidentally change the return
+// shape, TypeScript catches it at compile time instead of in production.
 
 interface GetAllMoodsParams {
   page: number;
@@ -14,10 +18,28 @@ interface GetAllMoodsParams {
   mood?: string;
 }
 
+interface PaginatedResult {
+  count: number;
+  total: number;
+  page: number;
+  pages: number;
+  data: IMoodLog[];
+}
+
+interface MoodStats {
+  period: string;
+  avgIntensity: string | number;
+  avgEnergyLevel: string | number;
+  avgSleepHours: string | number;
+  avgSleepQuality: string | number;
+  totalLogs: number;
+  moodBreakdown: Record<string, number>;
+}
+
 export const createMoodService = async (
-  userId: Types.ObjectId,
+  userId: string,
   data: CreateMoodLogInput
-) => {
+): Promise<IMoodLog> => {
   const newLog = await MoodLog.create({
     user: userId,
     ...data,
@@ -28,9 +50,9 @@ export const createMoodService = async (
 };
 
 export const getAllMoodsService = async (
-  userId: Types.ObjectId,
+  userId: string,
   params: GetAllMoodsParams
-) => {
+): Promise<PaginatedResult> => {
   const { page, limit, startDate, endDate, mood } = params;
   const skip = (page - 1) * limit;
 
@@ -62,12 +84,12 @@ export const getAllMoodsService = async (
 
 export const getMoodByIdService = async (
   moodId: string,
-  userId: Types.ObjectId
-) => {
+  userId: string
+): Promise<IMoodLog> => {
   const log = await MoodLog.findOne({ _id: moodId, user: userId });
 
   if (!log) {
-    throw new CustomError("Mood log not found", 404);
+    throw new NotFoundError("Mood log", moodId);
   }
 
   return log;
@@ -75,9 +97,9 @@ export const getMoodByIdService = async (
 
 export const updateMoodService = async (
   moodId: string,
-  userId: Types.ObjectId,
+  userId: string,
   data: UpdateMoodLogInput
-) => {
+): Promise<IMoodLog> => {
   const log = await MoodLog.findOneAndUpdate(
     { _id: moodId, user: userId },
     { $set: data },
@@ -85,7 +107,7 @@ export const updateMoodService = async (
   );
 
   if (!log) {
-    throw new CustomError("Mood log not found", 404);
+    throw new NotFoundError("Mood log", moodId);
   }
 
   return log;
@@ -93,21 +115,21 @@ export const updateMoodService = async (
 
 export const deleteMoodService = async (
   moodId: string,
-  userId: Types.ObjectId
-) => {
+  userId: string
+): Promise<IMoodLog> => {
   const log = await MoodLog.findOneAndDelete({ _id: moodId, user: userId });
 
   if (!log) {
-    throw new CustomError("Mood log not found", 404);
+    throw new NotFoundError("Mood log", moodId);
   }
 
   return log;
 };
 
 export const getMoodStatsService = async (
-  userId: Types.ObjectId,
+  userId: string,
   days: number
-) => {
+): Promise<MoodStats> => {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
 

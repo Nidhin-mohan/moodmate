@@ -1,7 +1,8 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
 import User, { IUser } from "../models/userModel";
-import CustomError from "../utils/customError";
+import { UnauthorizedError } from "../utils/customError";
+import { env } from "../config/env";
 
 interface JwtPayload {
   id: string;
@@ -15,7 +16,7 @@ export const authentication = async (
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer")) {
-    return next(new CustomError("Not authorized, no token", 401));
+    return next(new UnauthorizedError("Not authorized, no token"));
   }
 
   const token = authHeader.split(" ")[1];
@@ -23,18 +24,18 @@ export const authentication = async (
   try {
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET as string
+      env.JWT_SECRET
     ) as JwtPayload;
 
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
-      return next(new CustomError("Not authorized, user not found", 401));
+      return next(new UnauthorizedError("Not authorized, user not found"));
     }
 
     req.user = user as IUser;
     next();
   } catch (error) {
-    next(new CustomError("Not authorized, token failed", 401));
+    next(new UnauthorizedError("Not authorized, token failed"));
   }
 };

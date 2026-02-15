@@ -1,8 +1,5 @@
-// controllers/authController.ts
-
-import { Request, Response, NextFunction } from "express";
-import { logger } from "../utils/logger";
 import { HTTP_STATUS, MESSAGES } from "../constants/httpStatusCodes";
+import { asyncHandler } from "../utils/asyncHandler";
 import { registerSchema, loginSchema } from "../validations/userValidation";
 import {
   registerUserService,
@@ -10,77 +7,35 @@ import {
   getUserProfileService,
 } from "../services/authService";
 
-// Register a user
-export const registerUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const taskName = "User Registration";
-  logger.start(taskName);
+export const registerUser = asyncHandler("User Registration", async (req, res) => {
+  const { name, email, password } = registerSchema.parse(req.body);
+  const userData = await registerUserService(name, email, password);
 
-  try {
-    const { name, email, password } = registerSchema.parse(req.body);
-    const userData = await registerUserService(name, email, password);
+  res.status(HTTP_STATUS.CREATED).json({
+    success: true,
+    message: MESSAGES.USER_CREATED,
+    data: userData,
+  });
+});
 
-    logger.complete(taskName);
-    res.status(HTTP_STATUS.CREATED).json({
-      success: true,
-      message: MESSAGES.USER_CREATED,
-      data: userData,
-    });
-  } catch (error) {
-    logger.error(taskName, (error as Error).message);
-    next(error);
-  }
-};
+export const loginUser = asyncHandler("User Login", async (req, res) => {
+  const { email, password } = loginSchema.parse(req.body);
+  const userData = await loginUserService(email, password);
 
-// Login a user
-export const loginUser = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const taskName = "User Login";
-  logger.start(taskName);
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: MESSAGES.LOGIN_SUCCESS,
+    data: userData,
+  });
+});
 
-  try {
-    const { email, password } = loginSchema.parse(req.body);
-    const userData = await loginUserService(email, password);
+export const getUserProfile = asyncHandler("Get User Profile", async (req, res) => {
+  const userId = req.user!._id.toString();
+  const userData = await getUserProfileService(userId);
 
-    logger.complete(taskName);
-    res.status(HTTP_STATUS.OK).json({
-      success: true,
-      message: MESSAGES.LOGIN_SUCCESS,
-      data: userData,
-    });
-  } catch (error) {
-    logger.error(taskName, (error as Error).message);
-    next(error);
-  }
-};
-
-// Get user profile
-export const getUserProfile = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  const taskName = "Get User Profile";
-  logger.start(taskName);
-
-  try {
-    const userId = req.user?._id.toString();
-    const userData = await getUserProfileService(userId);
-
-    logger.complete(taskName);
-    res.status(HTTP_STATUS.OK).json({
-      success: true,
-      message: MESSAGES.USER_RETRIEVED,
-      data: userData,
-    });
-  } catch (error) {
-    logger.error(taskName, (error as Error).message);
-    next(error);
-  }
-};
+  res.status(HTTP_STATUS.OK).json({
+    success: true,
+    message: MESSAGES.USER_RETRIEVED,
+    data: userData,
+  });
+});

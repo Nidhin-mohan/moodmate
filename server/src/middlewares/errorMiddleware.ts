@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 import CustomError from "../utils/customError";
 import { HTTP_STATUS } from "../constants/httpStatusCodes";
+import { env } from "../config/env";
 import { logger } from "../utils/logger";
 
 // Middleware to handle not found routes
@@ -39,7 +40,7 @@ export const errorHandler = (
   const statusCode =
     (err as CustomError).statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR;
 
-  if (process.env.NODE_ENV !== "production") {
+  if (env.NODE_ENV !== "production") {
     logger.error("Error Stack:", err.stack || "No stack trace available");
   }
 
@@ -47,6 +48,6 @@ export const errorHandler = (
     success: false,
     message: err.message || "Internal Server Error",
     errorCode: (err as CustomError).errorCode || null,
-    stack: process.env.NODE_ENV === "production" ? undefined : err.stack,
+    stack: env.NODE_ENV === "production" ? undefined : err.stack,
   });
 };

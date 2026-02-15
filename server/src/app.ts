@@ -1,17 +1,16 @@
-
 import express, { Application } from "express";
 import cors from "cors";
+import helmet from "helmet";
 import morgan from "morgan";
 import mongoose from "mongoose";
+import { env } from "./config/env";
 import authRoutes from "./routes/authRoutes";
 import moodLogRoutes from "./routes/moodLogRoutes";
 import { errorHandler, notFound } from "./middlewares/errorMiddleware";
 
 const app: Application = express();
 
-const allowedOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim())
-  : ["http://localhost:5173"];
+const allowedOrigins = env.CORS_ORIGINS.split(",").map((o) => o.trim());
 
 const corsOptions = {
   origin: allowedOrigins,
@@ -19,8 +18,9 @@ const corsOptions = {
 };
 
 // Middleware
+app.use(helmet());
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: "16kb" }));
 app.use(morgan("dev"));
 
 // Health check
@@ -43,8 +43,8 @@ app.get("/", (req, res) => {
     message: "Welcome to Moodmate",
   });
 });
-app.use("/auth", authRoutes);
-app.use("/mood", moodLogRoutes);
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/mood", moodLogRoutes);
 
 // Error handling
 app.use(notFound);
