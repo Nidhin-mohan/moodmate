@@ -1,8 +1,7 @@
 import { showToast } from "@/utils/toast";
 import axios from "axios";
 
-// Define the base URL from environment variables
-const API_BASE_URL = "http://localhost:5000/api/v1";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api/v1";
 
 // Create an Axios instance
 const api = axios.create({
