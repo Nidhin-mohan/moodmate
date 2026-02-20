@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut, LayoutDashboard, Smile, User } from "lucide-react";
+import { Menu, X, LogOut, LayoutDashboard, Smile, User, History } from "lucide-react";
 import { useAuth } from "@/context/AuthContext"; // Integrating Auth Context
 
 const Navbar: React.FC = () => {
@@ -23,6 +23,7 @@ const Navbar: React.FC = () => {
   const navLinks = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { name: "Mood Tracking", path: "/mood-tracking", icon: Smile },
+    { name: "History", path: "/mood-history", icon: History },
     { name: "Profile", path: "/profile", icon: User },
   ];
 

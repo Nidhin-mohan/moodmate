@@ -1,15 +1,16 @@
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider"; 
-import { Switch } from "@/components/ui/switch"; 
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { showToast } from "@/utils/toast";
-import api from "@/api";
-import { 
+import { createMoodLog } from "@/services/moodLogService";
+import {
   Smile, Frown, Meh, Angry, Zap, Activity,
   MapPin, Users, Calendar, Moon
 } from "lucide-react";
@@ -93,6 +94,7 @@ type MoodFormData = z.infer<typeof moodSchema>;
 
 export default function MoodTrackingForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const {
     register,
@@ -100,6 +102,7 @@ export default function MoodTrackingForm() {
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors },
   } = useForm<MoodFormData>({
     resolver: zodResolver(moodSchema),
@@ -114,19 +117,40 @@ export default function MoodTrackingForm() {
 
   const selectedMoodLabel = watch("mood");
   const selectedSpecific = watch("specificEmotion");
-  
+
   // Find the config object for the currently selected mood
   const currentMoodObj = MOOD_OPTIONS.find(m => m.label === selectedMoodLabel);
+
+  // Convert comma-separated string to trimmed array, filtering empty values
+  const parseTagString = (value?: string): string[] => {
+    if (!value) return [];
+    return value.split(",").map(s => s.trim()).filter(Boolean);
+  };
 
   const onSubmit = async (data: MoodFormData) => {
     setIsSubmitting(true);
     try {
-      const payload = { ...data, date: new Date().toISOString() };
-      await api.post("/mood/track", payload);
+      await createMoodLog({
+        mood: data.mood,
+        specificEmotion: data.specificEmotion || undefined,
+        intensity: data.intensity,
+        energyLevel: data.energyLevel,
+        tagsPeople: parseTagString(data.tagsPeople),
+        tagsPlaces: parseTagString(data.tagsPlaces),
+        tagsEvents: parseTagString(data.tagsEvents),
+        sleepHours: data.sleepHours,
+        sleepQuality: data.sleepQuality,
+        exercise: data.exercise,
+        notes: data.notes || undefined,
+        reflections: data.reflections || undefined,
+        date: new Date().toISOString(),
+      });
       showToast.success("Check-in saved successfully!");
+      reset();
+      navigate("/dashboard");
     } catch (error) {
-      console.error(error);
-      showToast.error("Failed to save check-in.");
+      const message = error instanceof Error ? error.message : "Failed to save check-in.";
+      showToast.error(message);
     } finally {
       setIsSubmitting(false);
     }

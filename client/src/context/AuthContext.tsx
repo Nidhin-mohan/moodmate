@@ -1,4 +1,4 @@
-import { createContext, useState, useContext, ReactNode, useEffect } from "react";
+import { createContext, useState, useContext, ReactNode } from "react";
 
 // 1. Define the User Shape based on your JSON response
 export type User = {

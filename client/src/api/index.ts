@@ -14,7 +14,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Add headers or tokens here if needed
-    const token = localStorage.getItem("authToken"); // Example: Add JWT token
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -32,7 +32,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Handle unauthorized access (e.g., redirect to login)
-      localStorage.removeItem("authToken");
+      localStorage.removeItem("token");
       window.location.href = "/login";
     }
     return Promise.reject(error);

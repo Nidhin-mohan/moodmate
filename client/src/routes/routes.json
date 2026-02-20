@@ -27,6 +27,12 @@
     "layout": "MainLayout"
   },
   {
+    "path": "/mood-history",
+    "component": "MoodHistory",
+    "roles": ["user"],
+    "layout": "MainLayout"
+  },
+  {
     "path": "/profile",
     "component": "UserProfile",
     "roles": ["user"],

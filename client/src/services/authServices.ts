@@ -10,7 +10,7 @@ import { AxiosError } from "axios";
 export const login = async (
   credentials: LoginCredentials
 ): Promise<AuthResponse> => {
-  const response = await api .post<AuthResponse>("/login", credentials);
+  const response = await api.post<AuthResponse>("/auth/login", credentials);
   return response.data;
 };
 
