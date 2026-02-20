@@ -2,7 +2,7 @@ import { showToast } from "@/utils/toast";
 import axios from "axios";
 
 // Define the base URL from environment variables
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = "http://localhost:5000/api/v1";
 
 // Create an Axios instance
 const api = axios.create({
