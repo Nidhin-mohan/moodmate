@@ -1,15 +1,16 @@
-version: "3.9"
-
 services:
   backend:
     build: ./server
     container_name: moodmate-backend
     ports:
       - "5000:5000"
-    env_file:
-      - ./server/.env
-    depends_on:
-      - mongo
+    environment:
+      - PORT=5000
+      - MONGO_URI=${MONGO_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - NODE_ENV=production
+      - CORS_ORIGINS=${CORS_ORIGINS}
+    restart: unless-stopped
 
   frontend:
     build:
@@ -18,19 +19,7 @@ services:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     container_name: moodmate-frontend
     ports:
-         - "5173:80" # host:container
-    stdin_open: true
-    tty: true
+      - "80:80"
     depends_on:
       - backend
-
-  mongo:
-    image: mongo:5
-    container_name: moodmate-mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-
-volumes:
-  mongo_data:
+    restart: unless-stopped
