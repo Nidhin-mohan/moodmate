@@ -1,14 +1,11 @@
-import { Types } from "mongoose";
-import MoodLog, { IMoodLog } from "../models/moodLogModel";
+import { IMoodLog } from "../models/moodLogModel";
 import { NotFoundError } from "../utils/customError";
+import { moodLogRepository, MoodLogFilter } from "../repositories/moodLogRepository";
+import type { QueryOptions } from "../repositories/types";
 import type {
   CreateMoodLogInput,
   UpdateMoodLogInput,
 } from "../validations/moodLogValidation";
-
-// These interfaces define the "contract" — the exact shape each
-// function promises to return. If you accidentally change the return
-// shape, TypeScript catches it at compile time instead of in production.
 
 interface GetAllMoodsParams {
   page: number;
@@ -18,7 +15,7 @@ interface GetAllMoodsParams {
   mood?: string;
 }
 
-interface PaginatedResult {
+interface PaginatedMoodResult {
   count: number;
   total: number;
   page: number;
@@ -40,45 +37,49 @@ export const createMoodService = async (
   userId: string,
   data: CreateMoodLogInput
 ): Promise<IMoodLog> => {
-  const newLog = await MoodLog.create({
+  return moodLogRepository.create({
     user: userId,
     ...data,
     date: data.date || new Date(),
-  });
-
-  return newLog;
+  } as any);
 };
 
 export const getAllMoodsService = async (
   userId: string,
   params: GetAllMoodsParams
-): Promise<PaginatedResult> => {
+): Promise<PaginatedMoodResult> => {
   const { page, limit, startDate, endDate, mood } = params;
   const skip = (page - 1) * limit;
 
-  const filter: any = { user: userId };
+  // Build typed filter — service says WHAT it wants, repo handles HOW
+  const filter: MoodLogFilter = { user: userId };
 
   if (startDate || endDate) {
-    filter.date = {};
-    if (startDate) filter.date.$gte = new Date(startDate);
-    if (endDate) filter.date.$lte = new Date(endDate);
+    const dateFilter: { $gte?: Date; $lte?: Date } = {};
+    if (startDate) dateFilter.$gte = new Date(startDate);
+    if (endDate) dateFilter.$lte = new Date(endDate);
+    filter.date = dateFilter;
   }
 
   if (mood) {
     filter.mood = mood;
   }
 
-  const [logs, total] = await Promise.all([
-    MoodLog.find(filter).sort({ date: -1 }).skip(skip).limit(limit),
-    MoodLog.countDocuments(filter),
-  ]);
+  // One call → gets data + total count. No hand-rolling Promise.all.
+  const options: QueryOptions<MoodLogFilter> = {
+    filter,
+    sort: { field: "date", order: "desc" },
+    pagination: { skip, limit },
+  };
+
+  const result = await moodLogRepository.findAll(options);
 
   return {
-    count: logs.length,
-    total,
+    count: result.data.length,
+    total: result.total,
     page,
-    pages: Math.ceil(total / limit),
-    data: logs,
+    pages: Math.ceil(result.total / limit),
+    data: result.data,
   };
 };
 
@@ -86,7 +87,7 @@ export const getMoodByIdService = async (
   moodId: string,
   userId: string
 ): Promise<IMoodLog> => {
-  const log = await MoodLog.findOne({ _id: moodId, user: userId });
+  const log = await moodLogRepository.findByUserAndId(userId, moodId);
 
   if (!log) {
     throw new NotFoundError("Mood log", moodId);
@@ -100,10 +101,10 @@ export const updateMoodService = async (
   userId: string,
   data: UpdateMoodLogInput
 ): Promise<IMoodLog> => {
-  const log = await MoodLog.findOneAndUpdate(
-    { _id: moodId, user: userId },
-    { $set: data },
-    { new: true, runValidators: true }
+  const log = await moodLogRepository.updateByUserAndId(
+    userId,
+    moodId,
+    data as Record<string, unknown>
   );
 
   if (!log) {
@@ -117,7 +118,7 @@ export const deleteMoodService = async (
   moodId: string,
   userId: string
 ): Promise<IMoodLog> => {
-  const log = await MoodLog.findOneAndDelete({ _id: moodId, user: userId });
+  const log = await moodLogRepository.deleteByUserAndId(userId, moodId);
 
   if (!log) {
     throw new NotFoundError("Mood log", moodId);
@@ -133,40 +134,8 @@ export const getMoodStatsService = async (
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
 
-  const [summary, moodCounts] = await Promise.all([
-    MoodLog.aggregate([
-      {
-        $match: {
-          user: new Types.ObjectId(userId),
-          date: { $gte: startDate },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          avgIntensity: { $avg: "$intensity" },
-          avgEnergyLevel: { $avg: "$energyLevel" },
-          avgSleepHours: { $avg: "$sleepHours" },
-          avgSleepQuality: { $avg: "$sleepQuality" },
-          totalLogs: { $sum: 1 },
-        },
-      },
-    ]),
-    MoodLog.aggregate([
-      {
-        $match: {
-          user: new Types.ObjectId(userId),
-          date: { $gte: startDate },
-        },
-      },
-      {
-        $group: {
-          _id: "$mood",
-          count: { $sum: 1 },
-        },
-      },
-    ]),
-  ]);
+  const { summary, moodCounts } =
+    await moodLogRepository.getStatsByUser(userId, startDate);
 
   const moodBreakdown: Record<string, number> = {};
   for (const entry of moodCounts) {

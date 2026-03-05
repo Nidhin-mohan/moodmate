@@ -1,8 +1,9 @@
 import jwt from "jsonwebtoken";
 import { Request, Response, NextFunction } from "express";
-import User, { IUser } from "../models/userModel";
+import { IUser } from "../models/userModel";
 import { UnauthorizedError } from "../utils/customError";
 import { env } from "../config/env";
+import { userRepository } from "../repositories/userRepository";
 
 interface JwtPayload {
   id: string;
@@ -27,7 +28,7 @@ export const authentication = async (
       env.JWT_SECRET
     ) as JwtPayload;
 
-    const user = await User.findById(decoded.id).select("-password");
+    const user = await userRepository.findByIdSecure(decoded.id);
 
     if (!user) {
       return next(new UnauthorizedError("Not authorized, user not found"));
