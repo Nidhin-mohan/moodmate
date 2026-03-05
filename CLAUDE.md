@@ -38,10 +38,11 @@ docker-compose up    # Starts mongo, backend (:5000), frontend (:5173)
 
 Express + TypeScript + Mongoose + MongoDB. Follows a layered pattern:
 
-- **Routes** → **Controllers** (thin: parse/validate → call service → respond) → **Services** (business logic, DB queries)
+- **Routes** → **Controllers** (thin: parse/validate → call service → respond) → **Services** (business logic) → **Repositories** (data access)
+- **Repositories**: Generic `BaseRepository<T>` provides CRUD (findAll with filter/sort/pagination, findById, create, updateById, deleteById, exists) for every collection. `UserRepository` and `MoodLogRepository` extend it with collection-specific queries. Services never import Mongoose models directly — all DB access goes through repositories.
 - **Validations**: Zod schemas in `validations/` — validated in controllers before calling services
 - **Error handling**: Custom error classes in `utils/customError.ts` (BadRequestError, UnauthorizedError, NotFoundError, ConflictError). Central `errorHandler` middleware catches all. `ZodError` gets special handling with field-level detail. Async handlers wrapped via `utils/asyncHandler.ts` which also adds structured logging per handler.
-- **Auth**: Stateless JWT (Bearer token, 7-day expiry). `authMiddleware.ts` verifies token, fetches user from DB (excluding password), and attaches `req.user`. Auth routes rate-limited (20 req/15min per IP).
+- **Auth**: Stateless JWT (Bearer token, 7-day expiry). `authMiddleware.ts` verifies token, fetches user via `userRepository.findByIdSecure()` (excluding password), and attaches `req.user`. Auth routes rate-limited (20 req/15min per IP).
 - **Models**: `User` (bcrypt pre-save hook with salt rounds 10, `matchPassword` method, three roles: admin/user/therapist) and `MoodLog` (compound index `{user:1, date:-1}` for performant per-user time-ordered queries).
 - **Env validation**: `config/env.ts` uses Zod to validate all env vars at startup — app fails fast with human-readable errors per field.
 - **Startup**: `index.ts` connects DB first, then starts HTTP server. Registers `SIGTERM`/`SIGINT` handlers that close the HTTP server and Mongoose connection gracefully, with a 10-second force-exit safety net.
@@ -49,7 +50,7 @@ Express + TypeScript + Mongoose + MongoDB. Follows a layered pattern:
 
 API base path: `/api/v1/`. Auth routes at `/api/v1/auth/`, mood routes at `/api/v1/mood/`.
 
-**Stats endpoint**: `GET /api/v1/mood/stats?days=30` runs two parallel MongoDB aggregation pipelines — one for numeric averages (intensity, energy, sleep), one for mood-type breakdown. All mood queries include `{ user: userId }` filter to enforce ownership.
+**Stats endpoint**: `GET /api/v1/mood/stats?days=30` — `MoodLogRepository.getStatsByUser()` runs two parallel MongoDB aggregation pipelines — one for numeric averages (intensity, energy, sleep), one for mood-type breakdown. All mood queries include `{ user: userId }` filter to enforce ownership.
 
 ### Client (`client/src/`)
 
@@ -121,6 +122,7 @@ VITE_API_BASE_URL=http://localhost:5000/api/v1
 - **Separate tag arrays vs single tags array**: `tagsPeople`, `tagsPlaces`, `tagsEvents` are stored as three separate arrays rather than a flat `tags[]` with types. This makes aggregation queries simpler (no nested filtering) at the cost of a more rigid schema.
 - **Service layer error wrapping**: Services catch `AxiosError` and throw plain `Error`. This hides transport details from consumers but loses the original status code. The tradeoff favors simpler error handling in UI components.
 - **No update/delete exposed in UI**: Users cannot edit or delete mood logs from the frontend. Each mood change requires a new log entry. This is intentional — immutable logs preserve the full history needed for mood pattern analysis and prevent retroactive data manipulation.
+- **Repository pattern with BaseRepository**: All DB access goes through repositories. A generic `BaseRepository<T>` provides CRUD for every collection; child repos only add custom queries. Services import from `repositories/`, never from `models/` (except type interfaces). To add a new collection: create model → extend `BaseRepository` → get full CRUD for free. If switching databases, only `BaseRepository` and child implementations need rewriting — services stay untouched.
 
 ## Lessons Learned
 
@@ -131,6 +133,7 @@ VITE_API_BASE_URL=http://localhost:5000/api/v1
 - **Pre-save hooks and `isModified` guards**: The User model's bcrypt pre-save hook checks `this.isModified("password")` to avoid double-hashing when updating other fields. Without this guard, any user update would corrupt the password.
 - **Route ordering matters**: `/mood/stats` must be declared before `/mood/:id` in the router. Otherwise Express matches `stats` as an `:id` parameter and the stats endpoint becomes unreachable.
 - **`git rm --cached` for tracked `.env` files**: Adding `.env` to `.gitignore` does not untrack files already committed. You must explicitly `git rm --cached <file>` to stop tracking without deleting the local file.
+- **Services must never import Mongoose models directly**: All DB access goes through repositories. If a service imports a model, it bypasses the abstraction and re-introduces tight coupling. Services should import from `repositories/`, only importing type interfaces (like `IMoodLog`) from `models/`.
 
 ## Incident Simulations
 

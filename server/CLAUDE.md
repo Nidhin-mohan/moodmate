@@ -18,9 +18,10 @@ npx jest src/__tests__/auth.test.ts   # run a single test file
 
 Express + TypeScript + Mongoose + MongoDB. Layered pattern:
 
-**Routes → Controllers → Services**
+**Routes → Controllers → Services → Repositories**
 - Controllers are thin: parse request, validate with Zod, call service, send response. No try/catch — errors bubble to `asyncHandler` → `errorHandler`.
-- Services contain all business logic and DB queries. Every mood query includes `{ user: userId }` to enforce ownership at the data layer.
+- Services contain all business logic. They call repository methods — never Mongoose models directly. Every mood query includes `{ user: userId }` to enforce ownership at the data layer.
+- Repositories are the only layer that touches the database. A generic `BaseRepository<T>` provides CRUD (findAll, findById, create, updateById, deleteById, exists) for every collection. Collection-specific repos extend it and add only custom queries.
 - Zod validation schemas live in `src/validations/`. Validated in controllers before calling services.
 
 ### Key Directories
@@ -28,7 +29,8 @@ Express + TypeScript + Mongoose + MongoDB. Layered pattern:
 - `src/config/` — env validation (`env.ts` with Zod, fails fast with per-field errors), DB connection (`db.ts`), JWT generation (`jwt.ts`, 7-day expiry)
 - `src/routes/` — route definitions (`authRoutes.ts`, `moodLogRoutes.ts`)
 - `src/controllers/` — thin request handlers
-- `src/services/` — business logic layer
+- `src/services/` — business logic layer (no direct DB imports)
+- `src/repositories/` — data access layer: `baseRepository.ts` (generic CRUD), `userRepository.ts`, `moodLogRepository.ts`, `types.ts` (shared `QueryOptions`, `PaginatedResult`)
 - `src/models/` — Mongoose schemas (`User`, `MoodLog`)
 - `src/middlewares/` — auth (`authMiddleware.ts`), error handling (`errorMiddleware.ts`)
 - `src/validations/` — Zod schemas for request validation
@@ -86,13 +88,27 @@ Custom error classes extend `CustomError` in `utils/customError.ts`:
 
 Central `errorHandler` middleware handles `ZodError` specially (returns field-level validation errors). Stack traces included in non-production responses, stripped in production. Each error carries a machine-readable `errorCode` for programmatic client handling.
 
+### Repository Layer
+
+Generic `BaseRepository<TDocument>` in `repositories/baseRepository.ts` provides:
+- `findAll(options)` — filter + sort + pagination + select + total count in one call via `QueryOptions<TFilter>`
+- `findById(id)`, `findOne(filter)`, `create(data)`, `updateById(id, data)`, `deleteById(id)`, `exists(filter)`
+
+Collection-specific repositories extend the base:
+- **UserRepository** — adds `findByEmail(email)`, `findByIdSecure(id)` (excludes password)
+- **MoodLogRepository** — adds `findByUserAndId()`, `updateByUserAndId()`, `deleteByUserAndId()` (ownership-scoped), `getStatsByUser()` (aggregation pipelines)
+
+Shared types in `repositories/types.ts`: `QueryOptions<TFilter>`, `PaginatedResult<T>`, `AggregatedStats`.
+
+To add a new collection (e.g., Message): create model, then `class MessageRepository extends BaseRepository<IMessage>` — gets full CRUD for free, only add custom queries.
+
 ### Stats Aggregation
 
-`getMoodStatsService` runs two parallel MongoDB aggregation pipelines via `Promise.all`:
+`MoodLogRepository.getStatsByUser()` runs two parallel MongoDB aggregation pipelines via `Promise.all`:
 1. Numeric averages: intensity, energy level, sleep hours, sleep quality, total count
 2. Mood breakdown: count per mood type (returns `Record<string, number>`)
 
-Both are scoped to user + configurable day window (default 30 days).
+Both are scoped to user + configurable day window (default 30 days). The service (`getMoodStatsService`) calls the repository method and formats the result.
 
 ## Testing
 
@@ -145,8 +161,9 @@ All validated at startup via `config/env.ts`. App prints exact failing fields an
 - **Separate tag arrays vs single tags array**: `tagsPeople`, `tagsPlaces`, `tagsEvents` are three separate arrays rather than a flat `tags[]` with type discriminators. This makes aggregation queries simpler (no nested filtering) at the cost of a more rigid schema. Adding a new tag category requires a schema migration.
 - **Zod validation in controllers vs middleware**: Validation happens inside controller functions rather than in dedicated middleware. This keeps validation close to the handler that uses the data and allows controller-specific validation logic, but means Zod parse calls are repeated in each controller.
 - **asyncHandler wrapping vs express-async-errors**: Manual wrapping with `asyncHandler` is more explicit and adds structured logging per handler (task name). The tradeoff is boilerplate — every controller must use it.
-- **User lookup on every authenticated request**: `authMiddleware` does a DB query (`User.findById`) on every request to verify the user still exists. This catches deleted users immediately but adds a DB round-trip per request. A cache or token-only approach would be faster but risks stale user state.
+- **User lookup on every authenticated request**: `authMiddleware` calls `userRepository.findByIdSecure()` on every request to verify the user still exists. This catches deleted users immediately but adds a DB round-trip per request. A cache or token-only approach would be faster but risks stale user state.
 - **No update/delete exposed in frontend**: The server has full CRUD, but the frontend only uses create and read. Immutable mood logs preserve the full history for pattern analysis. The endpoints exist for admin tooling or future features.
+- **BaseRepository generic CRUD vs hand-rolled per collection**: Every collection repository extends `BaseRepository` and gets `findAll`, `findById`, `create`, `updateById`, `deleteById`, `exists` for free. Custom queries are added only in collection-specific repos. Tradeoff: the base uses `Record<string, unknown>` and `Partial<TDocument>` for flexibility, which is less type-safe than per-method typed parameters. The typed filter interfaces (`MoodLogFilter`, `UserFilter`) on the service side mitigate this.
 
 ## Lessons Learned
 
@@ -154,6 +171,7 @@ All validated at startup via `config/env.ts`. App prints exact failing fields an
 - **Pre-save hook `isModified` guard**: The User model's bcrypt pre-save hook must check `this.isModified("password")`. Without this, updating any user field (name, role) would re-hash the already-hashed password, corrupting it.
 - **`env-setup.ts` must run in `setupFiles`, not `setupFilesAfterEnv`**: Test environment variables must be injected before any module imports. `config/env.ts` validates at import time — if test vars aren't set by then, the validation fails and tests crash before they start.
 - **Mongoose `select("-password")` in auth middleware**: Forgetting this leaks password hashes into `req.user`, which could propagate to API responses if the user object is serialized carelessly.
+- **Services must never import Mongoose models directly**: All DB access goes through repositories. If a service imports a model, it bypasses the abstraction layer and re-introduces tight coupling. Check imports: services should import from `repositories/`, never from `models/` (except for type interfaces like `IMoodLog`).
 
 ## Incident Simulations
 
