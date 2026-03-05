@@ -1,33 +1,17 @@
-// logger.ts
+import pino from 'pino';
+import { env } from '../config/env';
 
-const colors = {
-  reset: "\x1b[0m",
-  green: "\x1b[32m",
-  yellow: "\x1b[33m",
-  red: "\x1b[31m",
-  blue: "\x1b[34m",
-  cyan: "\x1b[36m",
-};
-
-export const logger = {
-  start: (taskName: string) => {
-    const timestamp = new Date().toISOString();
-    console.log(
-      `${colors.cyan}[${timestamp}] ${colors.green}Starting task: ${taskName}${colors.reset}`
-    );
-  },
-
-  complete: (taskName: string) => {
-    const timestamp = new Date().toISOString();
-    console.log(
-      `${colors.cyan}[${timestamp}] ${colors.green}Completed task: ${taskName}${colors.reset}`
-    );
-  },
-
-  error: (taskName: string, error: string) => {
-    const timestamp = new Date().toISOString();
-    console.error(
-      `${colors.cyan}[${timestamp}] ${colors.red}Error in task: ${taskName} - ${error}${colors.reset}`
-    );
-  },
-};
+export const logger = pino({
+  level: env.NODE_ENV === 'test' ? 'silent' : 'info',
+  transport:
+    env.NODE_ENV !== 'production'
+      ? {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'SYS:yyyy-mm-dd HH:MM:ss',
+            ignore: 'pid,hostname',
+          },
+        }
+      : undefined,
+});

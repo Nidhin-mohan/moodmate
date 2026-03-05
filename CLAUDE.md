@@ -21,6 +21,8 @@ npm run lint         # eslint — check for lint issues
 npm run lint:fix     # eslint — auto-fix issues
 npm run format       # prettier — format all source files
 npm run format:check # prettier — check formatting (CI-friendly)
+npm run test:coverage # jest with coverage report + thresholds
+npm run seed <userId> # seed 60 days of mood logs for a user
 ```
 
 ### Client (`cd client`)
@@ -50,7 +52,10 @@ Express + TypeScript + Mongoose + MongoDB. Follows a layered pattern:
 - **Models**: `User` (bcrypt pre-save hook with salt rounds 10, `matchPassword` method, three roles: admin/user/therapist) and `MoodLog` (compound index `{user:1, date:-1}` for performant per-user time-ordered queries).
 - **Env validation**: `config/env.ts` uses Zod to validate all env vars at startup — app fails fast with human-readable errors per field.
 - **Startup**: `index.ts` connects DB first, then starts HTTP server. Registers `SIGTERM`/`SIGINT` handlers that close the HTTP server and Mongoose connection gracefully, with a 10-second force-exit safety net.
-- **Middleware stack order**: helmet → cors → json body parser (16kb limit) → morgan → routes → notFound → errorHandler.
+- **Middleware stack order**: requestId → helmet → cors → json body parser (16kb limit) → morgan → routes → notFound → errorHandler.
+- **Logging**: Pino structured logger (JSON in production, pretty-printed in dev, silent in test). Request ID tracing via `x-request-id` header (auto-generated UUID if not provided). Error responses include `requestId` for log correlation.
+- **API docs**: Swagger UI at `GET /api-docs` (non-production only). OpenAPI 3.0 spec in `config/swagger.ts`.
+- **ObjectId validation**: `validateObjectId()` middleware on `/:id` routes returns clean 400 instead of Mongoose cast errors.
 
 API base path: `/api/v1/`. Auth routes at `/api/v1/auth/`, mood routes at `/api/v1/mood/`.
 
@@ -71,6 +76,7 @@ React 18 + TypeScript + Vite 6 + Tailwind CSS v3 + shadcn/ui (new-york style, zi
 
 - **ESLint**: Flat config in `server/eslint.config.mjs`. Uses `@eslint/js` recommended + `typescript-eslint` recommended + `eslint-config-prettier` (disables rules that conflict with Prettier). Key rules: `@typescript-eslint/no-unused-vars` (warn, ignores `_`-prefixed args), `@typescript-eslint/no-explicit-any` (warn).
 - **Prettier**: Config in `server/.prettierrc`. Single quotes, trailing commas, 100-char print width, 2-space indent, LF line endings. Ignores `dist/`, `node_modules/`, `coverage/` via `.prettierignore`.
+- **Pre-commit hooks**: Husky + lint-staged at repo root (`.husky/pre-commit`). Staged `.ts` files are auto-formatted and lint-fixed on commit.
 
 ### Path Alias
 
@@ -84,6 +90,7 @@ Server tests use **mongodb-memory-server** for isolated in-memory MongoDB — no
 - `__tests__/helpers.ts`: Shared supertest request, `createAuthenticatedUser()`, `validMoodLog` fixture.
 - Tests: `auth.test.ts` (integration), `mood.test.ts` (integration), `validation.test.ts` (unit/Zod, no DB/HTTP).
 - Jest config: 30-second timeout for slow in-memory DB startup, `silent: true` suppresses console noise.
+- **Coverage**: `npm run test:coverage` generates reports in `coverage/` (text + lcov). Thresholds: 50% branches, 60% functions/lines/statements.
 
 ## Environment Variables
 

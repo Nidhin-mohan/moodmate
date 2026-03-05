@@ -1,5 +1,5 @@
 // routes/moodRoutes.ts
-import express from "express";
+import express from 'express';
 import {
   createMood,
   getAllMoods,
@@ -7,22 +7,18 @@ import {
   updateMood,
   deleteMood,
   getMoodStats,
-} from "../controllers/moodLogController";
-import { authentication } from "../middlewares/authMiddleware";
+} from '../controllers/moodLogController';
+import { authentication } from '../middlewares/authMiddleware';
+import { validateObjectId } from '../middlewares/validateObjectId';
 
 const router = express.Router();
 
 router.use(authentication);
 
-router.get("/stats", getMoodStats);
+router.get('/stats', getMoodStats);
 
-router.route("/")
-  .post(createMood)
-  .get(getAllMoods);
+router.route('/').post(createMood).get(getAllMoods);
 
-router.route("/:id")
-  .get(getMoodById)
-  .put(updateMood)
-  .delete(deleteMood);
+router.route('/:id').all(validateObjectId()).get(getMoodById).put(updateMood).delete(deleteMood);
 
 export default router;

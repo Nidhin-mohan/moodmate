@@ -13,6 +13,23 @@ const config: Config = {
   testTimeout: 30000,
   // Don't show console.log noise during tests
   silent: true,
+  // Coverage configuration
+  collectCoverageFrom: [
+    "src/**/*.ts",
+    "!src/__tests__/**",
+    "!src/@types/**",
+    "!src/seeds/**",
+  ],
+  coverageDirectory: "coverage",
+  coverageReporters: ["text", "text-summary", "lcov"],
+  coverageThreshold: {
+    global: {
+      branches: 50,
+      functions: 60,
+      lines: 60,
+      statements: 60,
+    },
+  },
 };
 
 export default config;

@@ -16,6 +16,8 @@ npm run lint         # eslint — check for lint issues
 npm run lint:fix     # eslint — auto-fix issues
 npm run format       # prettier — format all src/**/*.ts files
 npm run format:check # prettier — check formatting (CI-friendly)
+npm run test:coverage # jest with coverage report + thresholds
+npm run seed <userId> # seed 60 days of mood logs for a user
 ```
 
 ## Architecture Notes
@@ -30,22 +32,22 @@ Express + TypeScript + Mongoose + MongoDB. Layered pattern:
 
 ### Key Directories
 
-- `src/config/` — env validation (`env.ts` with Zod, fails fast with per-field errors), DB connection (`db.ts`), JWT generation (`jwt.ts`, 7-day expiry)
+- `src/config/` — env validation (`env.ts` with Zod, fails fast with per-field errors), DB connection (`db.ts`), JWT generation (`jwt.ts`, 7-day expiry), Swagger/OpenAPI spec (`swagger.ts`)
 - `src/routes/` — route definitions (`authRoutes.ts`, `moodLogRoutes.ts`)
 - `src/controllers/` — thin request handlers
 - `src/services/` — business logic layer (no direct DB imports)
 - `src/repositories/` — data access layer: `baseRepository.ts` (generic CRUD), `userRepository.ts`, `moodLogRepository.ts`, `types.ts` (shared `QueryOptions`, `PaginatedResult`)
 - `src/models/` — Mongoose schemas (`User`, `MoodLog`)
-- `src/middlewares/` — auth (`authMiddleware.ts`), error handling (`errorMiddleware.ts`)
+- `src/middlewares/` — auth (`authMiddleware.ts`), error handling (`errorMiddleware.ts`), request ID (`requestId.ts`), ObjectId validation (`validateObjectId.ts`)
 - `src/validations/` — Zod schemas for request validation
-- `src/utils/` — `asyncHandler` (wraps async routes + structured logging per handler), `customError` (base class + 4 subclasses), `logger` (color-coded console with timestamps)
+- `src/utils/` — `asyncHandler` (wraps async routes + structured logging per handler), `customError` (base class + 4 subclasses), `logger` (pino structured logger — JSON in production, pretty-printed in dev, silent in test)
 - `src/constants/` — HTTP status codes and messages enum
 - `src/@types/` — Express type augmentation (`req.user`)
 - `src/seeds/` — seed script for development data
 
 ### Middleware Stack Order
 
-`helmet` → `cors` → `express.json (16kb limit)` → `morgan` → routes → `notFound` → `errorHandler`
+`requestId` → `helmet` → `cors` → `express.json (16kb limit)` → `morgan` → routes → `notFound` → `errorHandler`
 
 ### Startup & Shutdown
 
@@ -124,6 +126,7 @@ Uses **mongodb-memory-server** — no external DB required.
 - `auth.test.ts` / `mood.test.ts` — integration tests (HTTP via supertest against the real Express app)
 - `validation.test.ts` — unit tests for Zod schemas (pure validation, no DB/HTTP)
 - Jest config: 30-second timeout for slow in-memory DB startup, `silent: true` suppresses console noise
+- **Coverage**: `npm run test:coverage` generates reports in `coverage/` (text + lcov). Thresholds: 50% branches, 60% functions/lines/statements. Coverage excludes `__tests__/`, `@types/`, and `seeds/`.
 
 ## Environment Variables (`.env`)
 
@@ -142,6 +145,22 @@ All validated at startup via `config/env.ts`. App prints exact failing fields an
 - **ESLint**: Flat config in `eslint.config.mjs`. Uses `@eslint/js` recommended + `typescript-eslint` recommended + `eslint-config-prettier` (disables rules that conflict with Prettier). Key rules: `@typescript-eslint/no-unused-vars` (warn, ignores `_`-prefixed args), `@typescript-eslint/no-explicit-any` (warn).
 - **Prettier**: Config in `.prettierrc`. Single quotes, trailing commas, 100-char print width, 2-space indent, LF line endings. Ignores `dist/`, `node_modules/`, `coverage/` via `.prettierignore`.
 - Run `npm run lint` before committing. Run `npm run format` to auto-format all source files.
+- **Pre-commit hooks**: Husky + lint-staged configured at repo root (`.husky/pre-commit`). On every commit, staged `.ts` files in `src/` are auto-formatted with Prettier and lint-fixed with ESLint.
+
+## Logging & Observability
+
+- **Structured logging**: Pino (`utils/logger.ts`). JSON output in production, pretty-printed in dev, silent in test. All application logs go through pino — no raw `console.log`.
+- **Request ID tracing**: `requestId` middleware (`middlewares/requestId.ts`) generates a UUID per request (or preserves incoming `x-request-id` header). The ID is attached to response headers and included in error responses and `asyncHandler` log entries. Use `x-request-id` to correlate logs for a single request.
+- **Error responses** include `requestId` field for traceability.
+
+## API Documentation
+
+Swagger UI available at `GET /api-docs` in non-production environments. Defined in `config/swagger.ts` using `swagger-jsdoc` with inline OpenAPI 3.0 spec. Covers all auth and mood endpoints with request/response schemas.
+
+## Input Validation
+
+- **Zod schemas** validate request bodies in controllers.
+- **ObjectId validation**: `validateObjectId()` middleware on all `/:id` routes returns `400 Bad Request` for invalid MongoDB ObjectIds instead of letting Mongoose throw a cast error.
 
 ## Path Alias
 
