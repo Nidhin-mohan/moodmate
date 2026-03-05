@@ -25,6 +25,9 @@ Therapists can write blogs on mental health, and users can engage with these blo
   - Node.js
   - Express.js
   - MongoDB (with future flexibility to switch to PostgreSQL)
+- **Code Quality**:
+  - ESLint (TypeScript rules via typescript-eslint)
+  - Prettier (consistent formatting)
 - **AI**: (Future scope)
   - AI integration for mood suggestions and emotional well-being tips.
 

@@ -12,6 +12,10 @@ npm start            # node dist/index.js (production)
 npm test             # jest (all __tests__/*.test.ts)
 npm run test:watch   # jest --watch
 npx jest src/__tests__/auth.test.ts   # run a single test file
+npm run lint         # eslint — check for lint issues
+npm run lint:fix     # eslint — auto-fix issues
+npm run format       # prettier — format all src/**/*.ts files
+npm run format:check # prettier — check formatting (CI-friendly)
 ```
 
 ## Architecture Notes
@@ -132,6 +136,12 @@ CORS_ORIGINS=http://localhost:5173
 ```
 
 All validated at startup via `config/env.ts`. App prints exact failing fields and exits with code 1 on misconfiguration.
+
+## Linting & Formatting
+
+- **ESLint**: Flat config in `eslint.config.mjs`. Uses `@eslint/js` recommended + `typescript-eslint` recommended + `eslint-config-prettier` (disables rules that conflict with Prettier). Key rules: `@typescript-eslint/no-unused-vars` (warn, ignores `_`-prefixed args), `@typescript-eslint/no-explicit-any` (warn).
+- **Prettier**: Config in `.prettierrc`. Single quotes, trailing commas, 100-char print width, 2-space indent, LF line endings. Ignores `dist/`, `node_modules/`, `coverage/` via `.prettierignore`.
+- Run `npm run lint` before committing. Run `npm run format` to auto-format all source files.
 
 ## Path Alias
 

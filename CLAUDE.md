@@ -17,6 +17,10 @@ npm test             # jest (runs all __tests__/*.test.ts)
 npm run test:watch   # jest --watch
 # Run a single test file:
 npx jest src/__tests__/auth.test.ts
+npm run lint         # eslint — check for lint issues
+npm run lint:fix     # eslint — auto-fix issues
+npm run format       # prettier — format all source files
+npm run format:check # prettier — check formatting (CI-friendly)
 ```
 
 ### Client (`cd client`)
@@ -62,6 +66,11 @@ React 18 + TypeScript + Vite 6 + Tailwind CSS v3 + shadcn/ui (new-york style, zi
 - **API layer**: Axios instance in `api/index.ts`. Base URL from `VITE_API_BASE_URL` env var. Request interceptor reads token from localStorage (not React state — avoids stale closures). Response interceptor does hard `window.location.href = "/login"` redirect on 401.
 - **Services**: `services/authServices.ts` and `services/moodLogService.ts` wrap API calls. Error pattern: catch `AxiosError`, extract `response.data.message`, throw plain `Error` with user-friendly fallback.
 - **UI**: shadcn/ui primitives in `components/ui/`, layout shell in `components/layout/`. All colors use CSS custom properties via `hsl(var(--xyz))` — theme changes only require updating CSS variables. Dark mode via Tailwind `class` strategy.
+
+### Linting & Formatting (Server)
+
+- **ESLint**: Flat config in `server/eslint.config.mjs`. Uses `@eslint/js` recommended + `typescript-eslint` recommended + `eslint-config-prettier` (disables rules that conflict with Prettier). Key rules: `@typescript-eslint/no-unused-vars` (warn, ignores `_`-prefixed args), `@typescript-eslint/no-explicit-any` (warn).
+- **Prettier**: Config in `server/.prettierrc`. Single quotes, trailing commas, 100-char print width, 2-space indent, LF line endings. Ignores `dist/`, `node_modules/`, `coverage/` via `.prettierignore`.
 
 ### Path Alias
 

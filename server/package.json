@@ -10,7 +10,11 @@
     "debug": "ts-node-dev --inspect --respawn --transpile-only src/index.ts",
     "build": "tsc",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "lint": "eslint \"src/**/*.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" --fix"
   },
   "keywords": [],
   "author": "",
@@ -28,6 +32,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.3",
     "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
@@ -36,14 +41,18 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.12.0",
     "@types/supertest": "^6.0.3",
+    "eslint": "^9.39.3",
+    "eslint-config-prettier": "^10.1.8",
     "jest": "^30.2.0",
     "mongodb-memory-server": "^11.0.1",
     "nodemon": "^3.1.9",
+    "prettier": "^3.8.1",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.56.1"
   }
 }
