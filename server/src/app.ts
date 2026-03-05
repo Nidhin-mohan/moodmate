@@ -3,7 +3,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import mongoose from 'mongoose';
+import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env';
+import { swaggerSpec } from './config/swagger';
 import authRoutes from './routes/authRoutes';
 import moodLogRoutes from './routes/moodLogRoutes';
 import { errorHandler, notFound } from './middlewares/errorMiddleware';
@@ -38,12 +40,8 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Swagger docs
+// Swagger docs (non-production only)
 if (env.NODE_ENV !== 'production') {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const swaggerUi = require('swagger-ui-express');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { swaggerSpec } = require('./config/swagger');
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 }
 
