@@ -10,6 +10,7 @@ import authRoutes from './routes/authRoutes';
 import moodLogRoutes from './routes/moodLogRoutes';
 import { errorHandler, notFound } from './middlewares/errorMiddleware';
 import { requestId } from './middlewares/requestId';
+import { healthLimiter } from './middlewares/rateLimiter';
 
 const app: Application = express();
 
@@ -28,7 +29,7 @@ app.use(express.json({ limit: '16kb' }));
 app.use(morgan('dev'));
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', healthLimiter, (req, res) => {
   const dbState = mongoose.connection.readyState;
   const isHealthy = dbState === 1;
 
@@ -45,13 +46,14 @@ if (env.NODE_ENV !== 'production') {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 }
 
-// Routes
-app.get('/', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Welcome to Moodmate',
-  });
-});
+// // Routes
+// app.get('/', (req, res) => {
+//   res.status(200).json({
+//     success: true,
+//     message: 'Welcome to Moodmate',
+//   });
+// });
+
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/mood', moodLogRoutes);
 
