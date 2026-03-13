@@ -1,6 +1,7 @@
-import { lazy } from "react";
+import React, { lazy } from "react";
 
-export const componentMap  = {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const componentMap: Record<string, React.LazyExoticComponent<React.ComponentType<any>>>  = {
   Home: lazy(() => import("../pages/Home")),
   Login: lazy(() => import("../pages/auth/Login")),
   SignUp: lazy(() => import("../pages/auth/SignUp")),
@@ -10,4 +11,4 @@ export const componentMap  = {
   UserProfile: lazy(() => import("../pages/profile/UserProfile")),
   MainLayout: lazy(() => import("../components/layout/Layout")),
   Unauthorized: lazy(() => import("../pages/Unauthorized"))
-} as any;
+};
