@@ -1,0 +1,15 @@
+services:
+  backend:
+    image: ${ECR_IMAGE:-moodmate-backend:latest}
+    container_name: moodmate-backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./server/.env
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
