@@ -246,7 +246,7 @@ export default function MoodTrackingForm() {
                       max={10}
                       min={1}
                       step={1}
-                      onValueChange={(vals : any[]) => field.onChange(vals[0])}
+                      onValueChange={(vals: number[]) => field.onChange(vals[0])}
                       className="flex-1"
                     />
                     <span className="text-sm font-bold text-teal-600 w-6 text-center">{field.value}</span>
@@ -269,7 +269,7 @@ export default function MoodTrackingForm() {
                       max={10}
                       min={1}
                       step={1}
-                      onValueChange={(vals : any[]) => field.onChange(vals[0])}
+                      onValueChange={(vals: number[]) => field.onChange(vals[0])}
                       className="flex-1"
                     />
                     <span className="text-sm font-bold text-yellow-600 w-6 text-center">{field.value}</span>
