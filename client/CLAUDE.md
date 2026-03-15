@@ -123,3 +123,5 @@ The web server must have SPA fallback routing. In nginx: `try_files $uri /index.
 
 ### Blank page after login
 Check browser console for lazy-load errors. If a component name in `routes.json` doesn't match a key in `componentMap.ts`, the route renders nothing. Also verify that the component file exists and has a default export.
+
+test
