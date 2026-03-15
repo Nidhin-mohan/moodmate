@@ -55,4 +55,4 @@ jobs:
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
-          ECR_IMAGE: ${{ steps.ecr-login.outputs.registry }}/moodmate-backend:latest
+          ECR_IMAGE: ${{ steps.ecr-login.outputs.registry }}/moodmate/backend:latest
