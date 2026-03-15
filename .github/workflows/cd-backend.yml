@@ -26,10 +26,10 @@ jobs:
         id: ecr-login
 
       - run: |
-          docker build -t ${{ steps.ecr-login.outputs.registry }}/moodmate-backend:${{ github.sha }} -f server/Dockerfile server/
-          docker tag ${{ steps.ecr-login.outputs.registry }}/moodmate-backend:${{ github.sha }} ${{ steps.ecr-login.outputs.registry }}/moodmate-backend:latest
-          docker push ${{ steps.ecr-login.outputs.registry }}/moodmate-backend:${{ github.sha }}
-          docker push ${{ steps.ecr-login.outputs.registry }}/moodmate-backend:latest
+          docker build -t ${{ steps.ecr-login.outputs.registry }}/moodmate/backend:${{ github.sha }} -f server/Dockerfile server/
+          docker tag ${{ steps.ecr-login.outputs.registry }}/moodmate/backend:${{ github.sha }} ${{ steps.ecr-login.outputs.registry }}/moodmate/backend:latest
+          docker push ${{ steps.ecr-login.outputs.registry }}/moodmate/backend:${{ github.sha }}
+          docker push ${{ steps.ecr-login.outputs.registry }}/moodmate/backend:latest
         name: Build and push Docker image
 
       - uses: appleboy/scp-action@v0.1.7
