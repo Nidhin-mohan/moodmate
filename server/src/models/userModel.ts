@@ -1,11 +1,11 @@
-import mongoose, { Schema, Document } from "mongoose";
-import bcrypt from "bcrypt";
+import mongoose, { Schema, Document } from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 // Define the enum for roles
 enum UserRole {
-  ADMIN = "admin",
-  USER = "user",
-  THERAPIST = "therapist",
+  ADMIN = 'admin',
+  USER = 'user',
+  THERAPIST = 'therapist',
 }
 
 export interface IUser extends Document {
@@ -28,12 +28,12 @@ const userSchema: Schema = new Schema(
       default: UserRole.USER,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Hash password before saving
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) {
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) {
     return next();
   }
 
@@ -42,12 +42,10 @@ userSchema.pre("save", async function (next) {
 });
 
 // Compare passwords
-userSchema.methods.matchPassword = async function (
-  enteredPassword: string
-): Promise<boolean> {
+userSchema.methods.matchPassword = async function (enteredPassword: string): Promise<boolean> {
   return bcrypt.compare(enteredPassword, this.password);
 };
 
-const User = mongoose.model<IUser>("User", userSchema);
+const User = mongoose.model<IUser>('User', userSchema);
 
 export default User;

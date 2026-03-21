@@ -9,6 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "dependencies": {
     "@hookform/resolvers": "^4.0.0",
     "@radix-ui/react-checkbox": "^1.1.4",
