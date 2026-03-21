@@ -1,164 +1,289 @@
-# **Backend Server for Your Application**
+# MoodMate — Backend
 
-## **Table of Contents**
-1. [Project Overview](#project-overview)
-2. [Features](#features)
-3. [Tech Stack](#tech-stack)
-4. [Setup and Installation](#setup-and-installation)
-5. [Environment Variables](#environment-variables)
-6. [API Endpoints](#api-endpoints)
-7. [Folder Structure](#folder-structure)
-8. [Contributing](#contributing)
-9. [License](#license)
+RESTful API server for mood tracking, built with Express, TypeScript, Mongoose, and MongoDB. Follows a layered architecture pattern with a generic repository for data access.
 
----
+## Tech Stack
 
-## **Project Overview**
-This is the backend server for the application, built with **Node.js**, **Express.js**, and **MongoDB**. It follows a modular and scalable architecture with TypeScript, ensuring type safety and maintainability. The server handles **user authentication**, **CRUD operations**, and other application functionalities.
+- **Express** — Web framework
+- **TypeScript** — Type safety
+- **Mongoose** + **MongoDB** — ODM and database
+- **JWT** + **bcrypt** — Stateless authentication with password hashing
+- **Zod** — Request validation and environment variable validation
+- **Pino** — Structured JSON logging with request ID tracing
+- **Jest** + **Supertest** + **mongodb-memory-server** — Testing with in-memory DB
+- **Swagger** — OpenAPI 3.0 documentation
+- **ESLint** + **Prettier** + **Husky** — Code quality and formatting
 
----
+## Getting Started
 
-## **Features**
-- **User Authentication**
-  - JWT-based stateless authentication.
-  - Secure password hashing with `bcrypt`.
-- **Input Validation**
-  - Using `Zod` for schema-based validation.
-- **Error Handling**
-  - Centralized error-handling middleware.
-- **Logging**
-  - Custom logging for error tracking and debugging.
-- **Scalable Architecture**
-  - Separation of concerns with modular controllers, services, and utilities.
-- **Environment-Specific Configurations**
-  - Dynamic error messages and stack traces for development and production.
-- **Extensibility**
-  - Designed to support additional features like rate limiting, caching, and API versioning.
-
----
-
-## **Tech Stack**
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Language**: TypeScript
-- **Database**: MongoDB (Mongoose for ORM)
-- **Validation**: Zod
-- **Authentication**: JWT
-- **Environment Management**: dotenv
-- **Logging**: Custom logger utility
-
----
-
-## **Setup and Installation**
-
-### **Prerequisites**
-- Node.js (v16+)
-- MongoDB (local or cloud instance)
-- npm or yarn
-
-
-### Installation
-
-Follow these steps to set up the project on your local machine:
-
-1. Clone the repository:
-    ```bash
-    git clone <repository_url>
-    ```
-
-2. Navigate to the server directory:
-    ```bash
-    cd server
-    ```
-
-3. Install dependencies:
-    ```bash
-    npm install
-    ```
-
-4. Add a `.env` file in the root directory with the following variables:
-    ```bash
-    MONGO_URI=<your_mongo_database_uri>
-    JWT_SECRET=<your_jwt_secret>
-    NODE_ENV=development
-    PORT=5000
-    ```
-
-5. To start the development server, use:
-    ```bash
-    npm run dev
-    ```
-
-6. For production build:
-    ```bash
-    npm run build
-    ```
-
-7. To start the production server:
-    ```bash
-    npm start
-    ```
-
-### Available Scripts
-
-- `npm run dev` – Start the development server using `ts-node-dev` for live reloading.
-- `npm run build` – Build the project using TypeScript.
-- `npm start` – Start the production server.
-
-### Routes and Endpoints
-
-- **POST** `/api/v1/auth/register` - Register a new user
-- **POST** `/api/v1/auth/login` - Login a user
-- **GET** `/api/v1/user/profile` - Get the logged-in user's profile
-
-### Error Handling
-
-The application uses a custom error handler for structured responses.
-
-Example:
-```json
-{
-  "success": false,
-  "message": "Invalid email or password",
-  "stack": "error_stack_trace_here"
-}
-```
-
-### Testing
-
-The application does not have a direct testing setup currently, but it supports manual testing through the routes defined.
-
-### Production Setup
-
-For production, make sure the `.env` file contains the proper environment variables and run:
 ```bash
-npm run build
-npm start
+cp .env.example .env     # Configure your environment variables
+npm install
+npm run dev              # http://localhost:5000
 ```
 
-This will start the server in production mode.
+Swagger docs available at `http://localhost:5000/api-docs` in development.
 
-## Contributing
+## Scripts
 
-We welcome contributions from everyone! To contribute to the project, follow these steps:
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Dev server with hot reload (ts-node-dev) |
+| `npm run build` | Compile TypeScript to `dist/` |
+| `npm start` | Run production build (`node dist/index.js`) |
+| `npm test` | Run all tests |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run test:coverage` | Tests with coverage report (thresholds enforced) |
+| `npm run lint` | Check for lint issues |
+| `npm run lint:fix` | Auto-fix lint issues |
+| `npm run format` | Format all source files with Prettier |
+| `npm run format:check` | Check formatting (CI-friendly) |
+| `npm run seed <userId>` | Seed 60 days of mood data for a user |
 
-1. **Fork the repository**: Create your own fork of the project to make changes.
-2. **Create a branch**: Create a new branch for each feature or bug fix.
-3. **Make changes**: Make the necessary changes or improvements in your branch.
-4. **Test your changes**: Ensure all tests pass and the code works as expected.
-5. **Submit a pull request**: Push your changes to your fork and submit a pull request for review.
+## Project Structure
 
-### Code of Conduct
+```
+src/
+├── config/
+│   ├── db.ts                 # MongoDB connection
+│   ├── env.ts                # Zod-based env validation (fails fast on bad config)
+│   ├── jwt.ts                # JWT token generation (7-day expiry)
+│   └── swagger.ts            # OpenAPI 3.0 spec
+├── controllers/
+│   ├── authController.ts     # Register, login, profile
+│   └── moodLogController.ts  # CRUD + stats
+├── services/
+│   ├── authService.ts        # Auth business logic
+│   └── moodLogService.ts     # Mood log business logic
+├── repositories/
+│   ├── baseRepository.ts     # Generic CRUD (findAll, findById, create, update, delete)
+│   ├── userRepository.ts     # Extends base: findByEmail, findByIdSecure
+│   ├── moodLogRepository.ts  # Extends base: ownership-scoped queries, aggregation stats
+│   └── types.ts              # QueryOptions, PaginatedResult, AggregatedStats
+├── models/
+│   ├── userModel.ts          # User schema (bcrypt pre-save hook, roles: admin/user/therapist)
+│   └── moodLogModel.ts       # MoodLog schema (compound index {user:1, date:-1})
+├── middlewares/
+│   ├── authMiddleware.ts     # JWT verification, attaches req.user
+│   ├── errorMiddleware.ts    # Central error handler (Zod-aware, strips stack in prod)
+│   ├── rateLimiter.ts        # 20 req/15min on auth routes
+│   ├── requestId.ts          # UUID per request (x-request-id header)
+│   └── validateObjectId.ts   # Clean 400 for invalid MongoDB ObjectIds
+├── validations/
+│   ├── userValidation.ts     # Register/login Zod schemas
+│   └── moodLogValidation.ts  # Mood log create/update Zod schemas
+├── routes/
+│   ├── authRoutes.ts
+│   └── moodLogRoutes.ts
+├── utils/
+│   ├── asyncHandler.ts       # Async route wrapper with structured logging
+│   ├── customError.ts        # BadRequest, Unauthorized, NotFound, Conflict errors
+│   └── logger.ts             # Pino logger (JSON prod, pretty dev, silent test)
+├── constants/
+│   └── httpStatusCodes.ts    # HTTP status codes enum
+├── seeds/
+│   └── moodSeed.ts           # Development data seeder
+├── @types/
+│   └── express.d.ts          # Express type augmentation (req.user)
+├── app.ts                    # Express app setup + middleware stack
+├── index.ts                  # Server startup + graceful shutdown
+└── __tests__/
+    ├── env-setup.ts           # Injects test env vars (Jest setupFiles)
+    ├── setup.ts               # MongoMemoryServer lifecycle
+    ├── helpers.ts             # Shared test utilities + fixtures
+    ├── auth.test.ts           # Auth integration tests
+    ├── mood.test.ts           # Mood log integration tests
+    └── validation.test.ts     # Zod schema unit tests
+```
 
-Please follow our [Code of Conduct](CODE_OF_CONDUCT.md) when participating in this project.
+## Architecture
 
-### Issues
+### Layered Pattern
 
-If you encounter a bug or have a feature request, please [create an issue](issues/new) in the repository.
+```
+Routes → Controllers → Services → Repositories → MongoDB
+```
 
-## License
+- **Controllers** are thin — parse request, validate with Zod, call service, send response. No try/catch; errors bubble through `asyncHandler` to the central error handler.
+- **Services** contain business logic. They call repository methods, never Mongoose models directly. All mood queries include `{ user: userId }` to enforce ownership.
+- **Repositories** are the only layer that touches the database. `BaseRepository<T>` provides generic CRUD for every collection. `UserRepository` and `MoodLogRepository` extend it with collection-specific queries.
 
-This project is licensed under the [MIT License](LICENSE). See the [LICENSE](LICENSE) file for more details.
+### Middleware Stack
 
+Request flows through middleware in this order:
 
+```
+requestId → helmet → cors → express.json (16kb) → morgan → routes → notFound → errorHandler
+```
 
+### Startup & Shutdown
+
+1. Connects to MongoDB first, then starts the HTTP server
+2. Registers `SIGTERM`/`SIGINT` handlers for graceful shutdown
+3. Closes HTTP server and Mongoose connection, with a 10-second force-exit safety net
+
+## API Endpoints
+
+Base path: `/api/v1/`
+
+### Auth Routes (rate-limited: 20 req/15min per IP)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/v1/auth/register` | No | Register a new user |
+| POST | `/api/v1/auth/login` | No | Login, returns JWT token |
+| GET | `/api/v1/auth/profile` | JWT | Get current user profile |
+
+### Mood Routes
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/v1/mood` | JWT | Create a mood log |
+| GET | `/api/v1/mood` | JWT | List logs (paginated, filterable by date range and mood) |
+| GET | `/api/v1/mood/stats?days=30` | JWT | Aggregated stats (averages + mood breakdown) |
+| GET | `/api/v1/mood/:id` | JWT | Get a single mood log |
+| PUT | `/api/v1/mood/:id` | JWT | Update a mood log |
+| DELETE | `/api/v1/mood/:id` | JWT | Delete a mood log |
+
+### Health
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/health` | No | DB connection state + uptime |
+
+## Data Models
+
+### User
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `name` | String | Required |
+| `email` | String | Required, unique |
+| `password` | String | Hashed with bcrypt (salt rounds: 10) |
+| `role` | String | `admin`, `user`, or `therapist` |
+
+- Pre-save hook hashes password only when modified (`isModified` guard prevents double-hashing)
+- `matchPassword()` instance method for login comparison
+
+### MoodLog
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `user` | ObjectId | Ref to User |
+| `mood` | String | Required |
+| `specificEmotion` | String | Optional |
+| `intensity` | Number | 1–10 |
+| `energyLevel` | Number | 1–10 |
+| `tagsPeople` | String[] | People tags |
+| `tagsPlaces` | String[] | Place tags |
+| `tagsEvents` | String[] | Event tags |
+| `sleepHours` | Number | 0–24 |
+| `sleepQuality` | Number | 1–5 |
+| `exercise` | Boolean | Whether user exercised |
+| `notes` | String | Optional |
+| `reflections` | String | Optional |
+| `aiAnalysis` | String | Reserved for future AI integration |
+| `date` | Date | Log date |
+
+- Compound index `{user: 1, date: -1}` for fast per-user time-ordered queries
+
+## Error Handling
+
+Custom error classes extend `CustomError`:
+
+| Class | Status | Use Case |
+|-------|--------|----------|
+| `BadRequestError` | 400 | Invalid input |
+| `UnauthorizedError` | 401 | Missing/invalid auth |
+| `NotFoundError` | 404 | Resource not found |
+| `ConflictError` | 409 | Duplicate resource |
+
+- `ZodError` gets special handling — returns field-level validation details
+- Stack traces included in development, stripped in production
+- Every error response includes `requestId` for log correlation
+
+## Authentication
+
+- Stateless JWT with Bearer token in `Authorization` header
+- 7-day token expiry
+- Auth middleware verifies token, fetches user from DB (excluding password), attaches to `req.user`
+- Three failure paths: missing/malformed header, valid token but deleted user, invalid/expired token
+
+## Testing
+
+Tests use **mongodb-memory-server** — no external database required.
+
+```bash
+npm test                              # Run all tests
+npm run test:coverage                 # With coverage report
+npx jest src/__tests__/auth.test.ts   # Run a single file
+```
+
+### Test Infrastructure
+
+- `env-setup.ts` — Injects test env vars before any module loads (runs in Jest `setupFiles`)
+- `setup.ts` — MongoMemoryServer lifecycle; `afterEach` drops all collections for isolation
+- `helpers.ts` — Shared supertest request, `createAuthenticatedUser()`, `validMoodLog` fixture
+
+### Coverage Thresholds
+
+| Metric | Threshold |
+|--------|-----------|
+| Branches | 50% |
+| Functions | 60% |
+| Lines | 60% |
+| Statements | 60% |
+
+## Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `PORT` | Server port | `5000` |
+| `MONGO_URI` | MongoDB connection string | `mongodb://localhost:27017/moodmate` |
+| `JWT_SECRET` | JWT signing secret (min 16 chars, enforced by Zod) | `your-secret-key-here` |
+| `NODE_ENV` | Environment (`development`, `production`, `test`) | `development` |
+| `CORS_ORIGINS` | Allowed origins, comma-separated | `http://localhost:5173` |
+
+All variables are validated at startup via Zod. The app fails fast with field-level error messages if any are missing or invalid.
+
+## Linting & Formatting
+
+- **ESLint** — Flat config with TypeScript rules + Prettier integration
+- **Prettier** — Single quotes, trailing commas, 100-char line width, 2-space indent
+- **Pre-commit hooks** — Husky + lint-staged auto-format and lint-fix staged `.ts` files
+
+```bash
+npm run lint         # Check
+npm run lint:fix     # Auto-fix
+npm run format       # Format all files
+npm run format:check # Check formatting (CI)
+```
+
+## Deployment
+
+### Docker
+
+```bash
+# From repo root, set MONGO_URI=mongodb://mongo:27017/moodmate in server/.env
+docker-compose up --build
+```
+
+Multi-stage Dockerfile: stage 1 compiles TypeScript, stage 2 is a lean `node:20-alpine` image with only `dist/`, production `node_modules/`, and `package.json`.
+
+### Production (AWS ECR + EC2)
+
+The GitHub Actions CD pipeline:
+1. Builds the Docker image
+2. Pushes to AWS ECR (tagged with commit SHA + `latest`)
+3. SSHs into EC2 and deploys via `docker-compose.prod.yml`
+
+### Production Checklist
+
+- Set `NODE_ENV=production` (strips stack traces from error responses)
+- Set `CORS_ORIGINS` to production frontend domain(s)
+- Use a strong random `JWT_SECRET` (min 16 chars)
+- Use `GET /health` for load balancer health probes
+
+## Path Alias
+
+`@/` maps to `./src/` via `tsconfig-paths`.

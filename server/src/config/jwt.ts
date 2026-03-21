@@ -1,8 +1,11 @@
-import jwt from "jsonwebtoken";
-import { env } from "./env";
+import { SignJWT } from 'jose';
+import { env } from './env';
 
-export const generateToken = (userId: string): string => {
-  return jwt.sign({ id: userId }, env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
+const secret = new TextEncoder().encode(env.JWT_SECRET);
+
+export const generateToken = async (userId: string): Promise<string> => {
+  return new SignJWT({ id: userId })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime('7d')
+    .sign(secret);
 };
