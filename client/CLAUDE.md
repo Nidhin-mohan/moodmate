@@ -104,7 +104,7 @@ Set via `VITE_API_BASE_URL` in `.env`. Falls back to `"/api/v1"` if not set — 
 3. Served via `nginx:1.25-alpine` at `localhost:3000` (host port 3000 → container port 80)
 4. SPA fallback configured in `nginx.conf` (`try_files $uri /index.html`)
 5. nginx also proxies `/api/` requests to `http://backend:5000/api/` with `X-Real-IP`, `X-Forwarded-For`, `X-Forwarded-Proto` headers — so the frontend can use relative `/api/v1` paths without knowing the backend URL
-6. Multi-stage Dockerfile: stage 1 builds with Node 20.11.1, stage 2 serves static files with `nginx:1.25-alpine`. Final image contains only nginx + static files — no Node.js or build tools.
+6. Multi-stage Dockerfile: stage 1 builds with Node 24, stage 2 serves static files with `nginx:1.25-alpine`. Final image contains only nginx + static files — no Node.js or build tools.
 
 ### Production (S3 + CloudFront)
 The GitHub Actions CD pipeline (`cd-frontend.yml`):
@@ -152,3 +152,5 @@ Two modes:
 
 ### Blank page after login
 Check browser console for lazy-load errors. If a component name in `routes.json` doesn't match a key in `componentMap.ts`, the route renders nothing. Also verify that the component file exists and has a default export.
+
+test

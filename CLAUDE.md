@@ -131,13 +131,13 @@ Three GitHub Actions workflows in `.github/workflows/`:
 Runs two parallel jobs:
 
 **Server job** (`working-directory: server`):
-1. Checkout → Node 20 setup
+1. Checkout → Node 24 setup
 2. Cache `~/.npm` (key: `server-npm-${{ hashFiles('server/package-lock.json') }}`)
 3. Cache `~/.cache/mongodb-binaries` (key: `mongodb-binaries-v7`) — avoids re-downloading MongoMemoryServer binary on every run
 4. `npm ci` → `npm run lint` → `npm test` → `npm run build`
 
 **Client job** (`working-directory: client`):
-1. Checkout → Node 20 setup
+1. Checkout → Node 24 setup
 2. Cache `~/.npm` (key: `client-npm-${{ hashFiles('client/package-lock.json') }}`)
 3. `npm ci` → `npm run lint` → `npm run build`
 
@@ -163,7 +163,7 @@ Runs two parallel jobs:
 **Permissions**: `contents: read`, `id-token: write`.
 
 **Steps**:
-1. Checkout → Node 20 → Cache `~/.npm` → `npm ci`
+1. Checkout → Node 24 → Cache `~/.npm` → `npm ci`
 2. Build with Vite: `npm run build` with `VITE_API_BASE_URL` injected from secrets (baked into bundle at build time)
 3. Configure AWS credentials via OIDC role assumption (`AWS_ROLE_ARN_S3` secret)
 4. `aws s3 sync client/dist/ s3://moodmate-app-frontend --delete`
@@ -220,8 +220,8 @@ Both have `.env.example` files as templates.
 - Loads env from `.env` file on the EC2 host
 - Frontend deployed separately to S3 + CloudFront (not in compose)
 - **Client**: Vite replaces `import.meta.env.*` at **build time**, not runtime. `VITE_API_BASE_URL` must be set before `npm run build` or `docker build`. It cannot be changed after the bundle is built.
-- **Server**: Multi-stage Docker build — stage 1 compiles TS, stage 2 is a lean `node:20-alpine` image with only `dist/`, `node_modules/`, and `package.json`.
-- **Client**: Multi-stage Docker build — stage 1 builds with Node 20.11.1, stage 2 serves via `nginx:1.25-alpine` with SPA fallback and API proxy.
+- **Server**: Multi-stage Docker build — stage 1 compiles TS, stage 2 is a lean `node:24-alpine` image with only `dist/`, `node_modules/`, and `package.json`.
+- **Client**: Multi-stage Docker build — stage 1 builds with Node 24, stage 2 serves via `nginx:1.25-alpine` with SPA fallback and API proxy.
 - **CORS**: `CORS_ORIGINS` in server `.env` must include the production frontend domain.
 
 ### Production Architecture

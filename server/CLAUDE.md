@@ -186,7 +186,7 @@ Swagger UI available at `GET /api-docs` in non-production environments. Defined 
 ### Docker
 1. Set `MONGO_URI` in `.env` pointing to an accessible MongoDB instance (e.g. MongoDB Atlas, or a host-network MongoDB — there is no mongo service in docker-compose)
 2. `docker-compose up --build` from repo root
-3. Multi-stage Dockerfile: stage 1 compiles TypeScript, stage 2 is a lean `node:20-alpine` image with only `dist/`, production `node_modules/`, and `package.json`
+3. Multi-stage Dockerfile: stage 1 compiles TypeScript, stage 2 is a lean `node:24-alpine` image with only `dist/`, production `node_modules/`, and `package.json`
 4. Docker health check: `wget --spider http://localhost:5000/health` (interval 30s, timeout 5s, retries 3, start period 10s)
 
 ### Production (AWS ECR + EC2)
