@@ -13,7 +13,6 @@ import {
   Leaf,
   ChevronRight,
   ArrowLeft,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -212,7 +211,7 @@ const PhysiologicalSighExercise: React.FC<{
   onComplete: () => void;
   onBack: () => void;
   gradient: string;
-}> = ({ onComplete, onBack, gradient }) => {
+}> = ({ onComplete, onBack: _onBack, gradient }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [cycle, setCycle] = useState(0);
@@ -392,7 +391,7 @@ const BoxBreathingExercise: React.FC<{
   onComplete: () => void;
   onBack: () => void;
   gradient: string;
-}> = ({ onComplete, onBack, gradient }) => {
+}> = ({ onComplete, onBack: _onBack, gradient }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [cycle, setCycle] = useState(0);
