@@ -1,40 +1,45 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut, LayoutDashboard, Smile, User, History } from "lucide-react";
+import { Menu, X, LogOut, LayoutDashboard, Smile, User, History, Sparkles, LogIn, UserPlus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext"; // Integrating Auth Context
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { logout } = useAuth(); // Use the global logout function
+  const { logout, isLoggedIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleLogout = () => {
-    logout(); // Clear context state
+    logout();
     navigate("/login");
   };
 
-  // Helper to check if a link is active
   const isActive = (path: string) => {
     return location.pathname === path;
   };
 
-  const navLinks = [
+  const authNavLinks = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { name: "Mood Tracking", path: "/mood-tracking", icon: Smile },
     { name: "History", path: "/mood-history", icon: History },
+    { name: "Tools", path: "/tools", icon: Sparkles },
     { name: "Profile", path: "/profile", icon: User },
   ];
 
+  const publicNavLinks = [
+    { name: "Tools", path: "/tools", icon: Sparkles },
+  ];
+
+  const navLinks = isLoggedIn ? authNavLinks : publicNavLinks;
+
   return (
-    // Sticky Navbar with Glassmorphism
     <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 h-16">
-        
+
         {/* Brand */}
         <Link
-          to="/dashboard"
+          to={isLoggedIn ? "/dashboard" : "/"}
           className="text-2xl font-bold tracking-tight text-slate-800 flex items-center gap-2"
         >
           <span className="text-teal-600">MoodMate</span>
@@ -60,14 +65,31 @@ const Navbar: React.FC = () => {
 
         {/* Desktop Actions */}
         <div className="hidden lg:flex items-center gap-4">
-          <Button
-            variant="ghost"
-            onClick={handleLogout}
-            className="text-slate-600 hover:text-red-600 hover:bg-red-50 gap-2"
-          >
-            <LogOut size={18} />
-            Logout
-          </Button>
+          {isLoggedIn ? (
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="text-slate-600 hover:text-red-600 hover:bg-red-50 gap-2"
+            >
+              <LogOut size={18} />
+              Logout
+            </Button>
+          ) : (
+            <>
+              <Link to="/login">
+                <Button variant="ghost" className="text-slate-600 hover:text-teal-600 gap-2">
+                  <LogIn size={18} />
+                  Log In
+                </Button>
+              </Link>
+              <Link to="/signup">
+                <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
+                  <UserPlus size={18} />
+                  Sign Up
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Toggle */}
@@ -98,17 +120,34 @@ const Navbar: React.FC = () => {
               {link.name}
             </Link>
           ))}
-          
+
           <div className="h-px bg-slate-100 my-2" />
 
-          <Button
-            onClick={handleLogout}
-            variant="ghost"
-            className="w-full justify-start px-4 py-6 text-slate-600 hover:text-red-600 hover:bg-red-50 text-base font-medium"
-          >
-            <LogOut size={20} className="mr-3" />
-            Logout
-          </Button>
+          {isLoggedIn ? (
+            <Button
+              onClick={handleLogout}
+              variant="ghost"
+              className="w-full justify-start px-4 py-6 text-slate-600 hover:text-red-600 hover:bg-red-50 text-base font-medium"
+            >
+              <LogOut size={20} className="mr-3" />
+              Logout
+            </Button>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start px-4 py-3 text-slate-600 text-base font-medium">
+                  <LogIn size={20} className="mr-3" />
+                  Log In
+                </Button>
+              </Link>
+              <Link to="/signup" onClick={() => setIsMenuOpen(false)}>
+                <Button className="w-full justify-start px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white text-base font-medium">
+                  <UserPlus size={20} className="mr-3" />
+                  Sign Up
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </nav>

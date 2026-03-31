@@ -9,6 +9,7 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
   MoodTrackingForm: lazy(() => import("../pages/moodTracking/MoodTrackingForm")),
   MoodHistory: lazy(() => import("../pages/moodTracking/MoodHistory")),
   UserProfile: lazy(() => import("../pages/profile/UserProfile")),
+  Tools: lazy(() => import("../pages/tools/Tools")),
   MainLayout: lazy(() => import("../components/layout/Layout")),
   Unauthorized: lazy(() => import("../pages/Unauthorized"))
 };
