@@ -37,5 +37,11 @@
     "component": "UserProfile",
     "roles": ["user"],
     "layout": "MainLayout"
+  },
+  {
+    "path": "/tools",
+    "component": "Tools",
+    "roles": ["public", "user"],
+    "layout": "MainLayout"
   }
 ]

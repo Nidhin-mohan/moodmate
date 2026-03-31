@@ -52,7 +52,7 @@ const Home = () => {
 
            {/* Secondary Link */}
            <Link
-            to="/o"
+            to="/tools"
             className="inline-flex items-center gap-2 text-teal-600 font-medium hover:underline mt-4 group"
           >
             Explore features without an account <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform"/>
