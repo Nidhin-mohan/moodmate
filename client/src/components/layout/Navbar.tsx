@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut, LayoutDashboard, Smile, User, History, Sparkles, LogIn, UserPlus, Sun, Moon } from "lucide-react";
+import { Menu, X, LogOut, LayoutDashboard, Smile, User, History, Sparkles, LogIn, UserPlus, Sun, Moon, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 

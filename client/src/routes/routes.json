@@ -43,5 +43,11 @@
     "component": "Tools",
     "roles": ["public", "user"],
     "layout": "MainLayout"
+  },
+  {
+    "path": "/tools",
+    "component": "Tools",
+    "roles": ["user"],
+    "layout": "MainLayout"
   }
 ]

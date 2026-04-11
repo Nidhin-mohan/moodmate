@@ -11,6 +11,10 @@ import {
   Smile,
   Moon,
   Dumbbell,
+  Brain,
+  Timer,
+  Tag,
+  Users,
 } from "lucide-react";
 
 const MOOD_COLORS: Record<string, string> = {
@@ -108,20 +112,51 @@ export default function MoodHistory() {
                 </div>
 
                 {/* Metrics row */}
-                <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400 mb-2">
+                <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400 mb-3">
                   <span>Intensity: <strong className="text-slate-700 dark:text-slate-300">{log.intensity}/10</strong></span>
                   <span>Energy: <strong className="text-slate-700 dark:text-slate-300">{log.energyLevel}/10</strong></span>
+                  {log.stressLevel != null && (
+                    <span className="flex items-center gap-1">
+                      <Brain size={14} className="text-orange-500" />
+                      Stress: <strong className="text-slate-700 dark:text-slate-300">{log.stressLevel}/10</strong>
+                    </span>
+                  )}
+                  {log.anxietyLevel != null && (
+                    <span className="flex items-center gap-1">
+                      <Brain size={14} className="text-purple-500" />
+                      Anxiety: <strong className="text-slate-700 dark:text-slate-300">{log.anxietyLevel}/10</strong>
+                    </span>
+                  )}
                   <span className="flex items-center gap-1">
                     <Moon size={14} /> {log.sleepHours}h sleep (quality {log.sleepQuality}/5)
                   </span>
                   {log.exercise && (
                     <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                      <Dumbbell size={14} /> Exercised
+                      <Dumbbell size={14} />
+                      {log.exerciseMinutes != null ? `${log.exerciseMinutes} min` : "Exercised"}
                     </span>
                   )}
                 </div>
 
-                {/* Tags */}
+                {/* Context badges */}
+                {(log.socialQuality || log.moodTriggerCategory) && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {log.socialQuality && (
+                      <span className="flex items-center gap-1 text-xs bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 px-2 py-0.5 rounded-full">
+                        <Users size={11} />
+                        {log.socialQuality.charAt(0).toUpperCase() + log.socialQuality.slice(1)}
+                      </span>
+                    )}
+                    {log.moodTriggerCategory && (
+                      <span className="flex items-center gap-1 text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">
+                        <Tag size={11} />
+                        {log.moodTriggerCategory.charAt(0).toUpperCase() + log.moodTriggerCategory.slice(1)}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* People / Places / Events tags */}
                 {(log.tagsPeople?.length || log.tagsPlaces?.length || log.tagsEvents?.length) ? (
                   <div className="flex flex-wrap gap-2 mb-2">
                     {log.tagsPeople?.map((t) => (

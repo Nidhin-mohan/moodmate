@@ -41,7 +41,7 @@ export const createMoodService = async (
     user: userId,
     ...data,
     date: data.date || new Date(),
-  } as any);
+  } as unknown as Partial<IMoodLog>);
 };
 
 export const getAllMoodsService = async (
