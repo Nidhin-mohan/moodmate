@@ -74,23 +74,23 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50/50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50/50 dark:bg-transparent flex items-center justify-center">
         <Loader2 className="animate-spin text-teal-600" size={32} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-transparent">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
 
         {/* 1. Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">
+            <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">
               Welcome Back{user?.name ? `, ${user.name}` : ""}!
             </h1>
-            <p className="text-slate-500 mt-1 flex items-center gap-2">
+            <p className="text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
               <Calendar size={16} className="text-teal-600" />
               {currentDate}
             </p>
@@ -105,33 +105,33 @@ const Dashboard = () => {
 
         {/* 2. Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="p-6 border-none shadow-md bg-white rounded-2xl flex items-center gap-4">
-            <div className="p-3 bg-orange-100 text-orange-600 rounded-xl">
+          <Card className="p-6 border-none shadow-md bg-white dark:bg-slate-800 rounded-2xl flex items-center gap-4">
+            <div className="p-3 bg-orange-100 dark:bg-orange-900/30 text-orange-600 rounded-xl">
               <TrendingUp size={24} />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Avg Intensity</p>
-              <h3 className="text-2xl font-bold text-slate-800">{stats?.avgIntensity ?? "—"}<span className="text-sm font-normal text-slate-400">/10</span></h3>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Avg Intensity</p>
+              <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{stats?.avgIntensity ?? "—"}<span className="text-sm font-normal text-slate-400">/10</span></h3>
             </div>
           </Card>
 
-          <Card className="p-6 border-none shadow-md bg-white rounded-2xl flex items-center gap-4">
-            <div className="p-3 bg-teal-100 text-teal-600 rounded-xl">
+          <Card className="p-6 border-none shadow-md bg-white dark:bg-slate-800 rounded-2xl flex items-center gap-4">
+            <div className="p-3 bg-teal-100 dark:bg-teal-900/30 text-teal-600 rounded-xl">
               <Smile size={24} />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Top Mood</p>
-              <h3 className="text-2xl font-bold text-slate-800">{topMood}</h3>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Top Mood</p>
+              <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{topMood}</h3>
             </div>
           </Card>
 
-          <Card className="p-6 border-none shadow-md bg-white rounded-2xl flex items-center gap-4">
-            <div className="p-3 bg-blue-100 text-blue-600 rounded-xl">
+          <Card className="p-6 border-none shadow-md bg-white dark:bg-slate-800 rounded-2xl flex items-center gap-4">
+            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-xl">
               <Activity size={24} />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">Total Check-ins</p>
-              <h3 className="text-2xl font-bold text-slate-800">{stats?.totalLogs ?? 0}</h3>
+              <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Check-ins</p>
+              <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">{stats?.totalLogs ?? 0}</h3>
             </div>
           </Card>
         </div>
@@ -142,14 +142,14 @@ const Dashboard = () => {
           {/* Recent History List */}
           <div className="lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-slate-800">Recent Activity</h2>
-              <Link to="/mood-history" className="text-teal-600 text-sm font-medium hover:underline">View All</Link>
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Recent Activity</h2>
+              <Link to="/mood-history" className="text-teal-600 dark:text-teal-400 text-sm font-medium hover:underline">View All</Link>
             </div>
 
             {recentMoods.length === 0 ? (
-              <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-100 text-center">
-                <Smile size={40} className="mx-auto text-slate-300 mb-3" />
-                <p className="text-slate-500 mb-4">No mood logs yet. Start tracking to see your history here.</p>
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 text-center">
+                <Smile size={40} className="mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+                <p className="text-slate-500 dark:text-slate-400 mb-4">No mood logs yet. Start tracking to see your history here.</p>
                 <Link to="/mood-tracking">
                   <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
                     <Plus size={16} />
@@ -162,19 +162,19 @@ const Dashboard = () => {
                 {recentMoods.map((item) => (
                   <div
                     key={item._id}
-                    className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between hover:border-teal-200 transition-colors"
+                    className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-between hover:border-teal-200 dark:hover:border-teal-700 transition-colors"
                   >
                     <div className="flex items-center gap-4">
                       <div className={`w-3 h-3 rounded-full ${MOOD_COLORS[item.mood] ?? "bg-slate-400"}`} />
                       <div>
-                        <h4 className="font-semibold text-slate-800">
+                        <h4 className="font-semibold text-slate-800 dark:text-slate-100">
                           {item.mood}
-                          {item.specificEmotion && <span className="text-sm font-normal text-slate-400 ml-2">· {item.specificEmotion}</span>}
+                          {item.specificEmotion && <span className="text-sm font-normal text-slate-400 dark:text-slate-500 ml-2">· {item.specificEmotion}</span>}
                         </h4>
-                        {item.notes && <p className="text-sm text-slate-500 line-clamp-1">{item.notes}</p>}
+                        {item.notes && <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1">{item.notes}</p>}
                       </div>
                     </div>
-                    <span className="text-xs font-medium text-slate-400 bg-slate-50 px-2 py-1 rounded-md whitespace-nowrap">
+                    <span className="text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-700 px-2 py-1 rounded-md whitespace-nowrap">
                       {formatDate(item.date ?? item.createdAt)}
                     </span>
                   </div>
@@ -185,7 +185,7 @@ const Dashboard = () => {
 
           {/* Side Widget */}
           <div className="lg:col-span-1">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">Daily Insight</h2>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">Daily Insight</h2>
             <div className="bg-gradient-to-br from-indigo-600 to-purple-700 text-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
               <div className="relative z-10">
                 <p className="font-medium text-indigo-100 text-sm mb-2">Quote of the day</p>

@@ -59,8 +59,8 @@ export default function MoodHistory() {
     <div className="max-w-3xl mx-auto py-8 px-4">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Mood History</h1>
-          <p className="text-slate-500 mt-1">All your mood check-ins in one place.</p>
+          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Mood History</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">All your mood check-ins in one place.</p>
         </div>
         <Link to="/mood-tracking">
           <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
@@ -75,9 +75,9 @@ export default function MoodHistory() {
           <Loader2 className="animate-spin text-teal-600" size={32} />
         </div>
       ) : logs.length === 0 ? (
-        <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-100 text-center">
-          <Smile size={40} className="mx-auto text-slate-300 mb-3" />
-          <p className="text-slate-500 mb-4">No mood logs yet.</p>
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 text-center">
+          <Smile size={40} className="mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+          <p className="text-slate-500 dark:text-slate-400 mb-4">No mood logs yet.</p>
           <Link to="/mood-tracking">
             <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
               <Plus size={16} />
@@ -91,31 +91,31 @@ export default function MoodHistory() {
             {logs.map((log) => (
               <div
                 key={log._id}
-                className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 hover:border-teal-200 transition-colors"
+                className="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 hover:border-teal-200 dark:hover:border-teal-700 transition-colors"
               >
                 {/* Header row */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className={`w-3 h-3 rounded-full ${MOOD_COLORS[log.mood] ?? "bg-slate-400"}`} />
-                    <h3 className="font-semibold text-slate-800">{log.mood}</h3>
+                    <h3 className="font-semibold text-slate-800 dark:text-slate-100">{log.mood}</h3>
                     {log.specificEmotion && (
-                      <span className="text-sm text-slate-400">· {log.specificEmotion}</span>
+                      <span className="text-sm text-slate-400 dark:text-slate-500">· {log.specificEmotion}</span>
                     )}
                   </div>
-                  <span className="text-xs font-medium text-slate-400 bg-slate-50 px-2 py-1 rounded-md">
+                  <span className="text-xs font-medium text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-700 px-2 py-1 rounded-md">
                     {formatDate(log.date ?? log.createdAt)}
                   </span>
                 </div>
 
                 {/* Metrics row */}
-                <div className="flex flex-wrap gap-4 text-sm text-slate-500 mb-2">
-                  <span>Intensity: <strong className="text-slate-700">{log.intensity}/10</strong></span>
-                  <span>Energy: <strong className="text-slate-700">{log.energyLevel}/10</strong></span>
+                <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400 mb-2">
+                  <span>Intensity: <strong className="text-slate-700 dark:text-slate-300">{log.intensity}/10</strong></span>
+                  <span>Energy: <strong className="text-slate-700 dark:text-slate-300">{log.energyLevel}/10</strong></span>
                   <span className="flex items-center gap-1">
                     <Moon size={14} /> {log.sleepHours}h sleep (quality {log.sleepQuality}/5)
                   </span>
                   {log.exercise && (
-                    <span className="flex items-center gap-1 text-green-600">
+                    <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
                       <Dumbbell size={14} /> Exercised
                     </span>
                   )}
@@ -125,23 +125,23 @@ export default function MoodHistory() {
                 {(log.tagsPeople?.length || log.tagsPlaces?.length || log.tagsEvents?.length) ? (
                   <div className="flex flex-wrap gap-2 mb-2">
                     {log.tagsPeople?.map((t) => (
-                      <span key={t} className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{t}</span>
+                      <span key={t} className="text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full">{t}</span>
                     ))}
                     {log.tagsPlaces?.map((t) => (
-                      <span key={t} className="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">{t}</span>
+                      <span key={t} className="text-xs bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full">{t}</span>
                     ))}
                     {log.tagsEvents?.map((t) => (
-                      <span key={t} className="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full">{t}</span>
+                      <span key={t} className="text-xs bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full">{t}</span>
                     ))}
                   </div>
                 ) : null}
 
                 {/* Notes */}
                 {log.notes && (
-                  <p className="text-sm text-slate-600 mt-2">{log.notes}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">{log.notes}</p>
                 )}
                 {log.reflections && (
-                  <p className="text-sm text-slate-500 italic mt-1">{log.reflections}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-500 italic mt-1">{log.reflections}</p>
                 )}
               </div>
             ))}
@@ -160,7 +160,7 @@ export default function MoodHistory() {
                 <ChevronLeft size={16} />
                 Previous
               </Button>
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-slate-500 dark:text-slate-400">
                 Page {page} of {totalPages}
               </span>
               <Button

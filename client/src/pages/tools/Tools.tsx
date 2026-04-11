@@ -53,7 +53,7 @@ const tools: Tool[] = [
     icon: Wind,
     gradient: "from-sky-500 to-indigo-500",
     iconColor: "text-sky-500",
-    bgAccent: "bg-sky-50",
+    bgAccent: "bg-sky-50 dark:bg-sky-900/30",
     category: "breathing",
   },
   {
@@ -66,7 +66,7 @@ const tools: Tool[] = [
     icon: Box,
     gradient: "from-violet-500 to-purple-600",
     iconColor: "text-violet-500",
-    bgAccent: "bg-violet-50",
+    bgAccent: "bg-violet-50 dark:bg-violet-900/30",
     category: "breathing",
   },
   {
@@ -79,7 +79,7 @@ const tools: Tool[] = [
     icon: Eye,
     gradient: "from-emerald-500 to-teal-500",
     iconColor: "text-emerald-500",
-    bgAccent: "bg-emerald-50",
+    bgAccent: "bg-emerald-50 dark:bg-emerald-900/30",
     category: "grounding",
   },
   {
@@ -92,7 +92,7 @@ const tools: Tool[] = [
     icon: Heart,
     gradient: "from-rose-500 to-pink-500",
     iconColor: "text-rose-500",
-    bgAccent: "bg-rose-50",
+    bgAccent: "bg-rose-50 dark:bg-rose-900/30",
     category: "grounding",
   },
   {
@@ -105,7 +105,7 @@ const tools: Tool[] = [
     icon: Leaf,
     gradient: "from-amber-500 to-orange-500",
     iconColor: "text-amber-500",
-    bgAccent: "bg-amber-50",
+    bgAccent: "bg-amber-50 dark:bg-amber-900/30",
     category: "mindfulness",
   },
   {
@@ -118,7 +118,7 @@ const tools: Tool[] = [
     icon: Brain,
     gradient: "from-fuchsia-500 to-pink-500",
     iconColor: "text-fuchsia-500",
-    bgAccent: "bg-fuchsia-50",
+    bgAccent: "bg-fuchsia-50 dark:bg-fuchsia-900/30",
     category: "mindfulness",
   },
 ];
@@ -135,7 +135,7 @@ const categoryLabels: Record<string, string> = {
 
 interface BreathingCircleProps {
   phase: string;
-  progress: number; // 0-1 within current phase
+  progress: number;
   gradient: string;
   isPaused: boolean;
 }
@@ -151,42 +151,21 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({
       ? 0.6 + 0.4 * progress
       : phase === "Exhale"
         ? 1.0 - 0.4 * progress
-        : 1.0; // hold
+        : 1.0;
 
   return (
     <div className="relative flex items-center justify-center w-64 h-64 sm:w-72 sm:h-72">
-      {/* Outer ring */}
       <div
-        className={cn(
-          "absolute inset-0 rounded-full bg-gradient-to-br opacity-10",
-          gradient
-        )}
-        style={{
-          transform: `scale(${scale * 1.15})`,
-          transition: isPaused ? "none" : "transform 0.3s ease-out",
-        }}
+        className={cn("absolute inset-0 rounded-full bg-gradient-to-br opacity-10", gradient)}
+        style={{ transform: `scale(${scale * 1.15})`, transition: isPaused ? "none" : "transform 0.3s ease-out" }}
       />
-      {/* Middle ring */}
       <div
-        className={cn(
-          "absolute inset-4 rounded-full bg-gradient-to-br opacity-20",
-          gradient
-        )}
-        style={{
-          transform: `scale(${scale * 1.08})`,
-          transition: isPaused ? "none" : "transform 0.3s ease-out",
-        }}
+        className={cn("absolute inset-4 rounded-full bg-gradient-to-br opacity-20", gradient)}
+        style={{ transform: `scale(${scale * 1.08})`, transition: isPaused ? "none" : "transform 0.3s ease-out" }}
       />
-      {/* Main circle */}
       <div
-        className={cn(
-          "absolute inset-8 rounded-full bg-gradient-to-br shadow-2xl flex items-center justify-center",
-          gradient
-        )}
-        style={{
-          transform: `scale(${scale})`,
-          transition: isPaused ? "none" : "transform 0.3s ease-out",
-        }}
+        className={cn("absolute inset-8 rounded-full bg-gradient-to-br shadow-2xl flex items-center justify-center", gradient)}
+        style={{ transform: `scale(${scale})`, transition: isPaused ? "none" : "transform 0.3s ease-out" }}
       >
         <span className="text-white text-xl sm:text-2xl font-semibold tracking-wide select-none">
           {phase}
@@ -200,7 +179,6 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({
    Physiological Sigh Exercise
    ──────────────────────────────────────────── */
 
-// Cycle: double inhale (3.5s) → long exhale (6.5s) = 10s per cycle, 6 cycles = 60s
 const SIGH_PHASES = [
   { name: "Double Inhale", duration: 3500 },
   { name: "Exhale", duration: 6500 },
@@ -258,26 +236,11 @@ const PhysiologicalSighExercise: React.FC<{
     };
   }, [isRunning, tick]);
 
-  const start = () => {
-    setHasStarted(true);
-    setIsRunning(true);
-  };
-
-  const togglePause = () => {
-    if (isRunning) {
-      setIsRunning(false);
-    } else {
-      setIsRunning(true);
-    }
-  };
-
+  const start = () => { setHasStarted(true); setIsRunning(true); };
+  const togglePause = () => setIsRunning((r) => !r);
   const reset = () => {
-    setIsRunning(false);
-    setHasStarted(false);
-    setCycle(0);
-    setPhaseIdx(0);
-    setPhaseProgress(0);
-    setCompleted(false);
+    setIsRunning(false); setHasStarted(false); setCycle(0);
+    setPhaseIdx(0); setPhaseProgress(0); setCompleted(false);
   };
 
   if (completed) {
@@ -287,8 +250,8 @@ const PhysiologicalSighExercise: React.FC<{
           <Sparkles className="text-white" size={32} />
         </div>
         <div className="text-center space-y-2">
-          <h3 className="text-2xl font-bold text-slate-800">Well done</h3>
-          <p className="text-slate-500 max-w-xs">
+          <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Well done</h3>
+          <p className="text-slate-500 dark:text-slate-400 max-w-xs">
             You completed 6 cycles of physiological sighing. Notice how your body feels now.
           </p>
         </div>
@@ -308,33 +271,23 @@ const PhysiologicalSighExercise: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-8 animate-in fade-in duration-500">
         <div className="text-center space-y-4 max-w-md">
-          <h3 className="text-xl font-semibold text-slate-700">How it works</h3>
+          <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200">How it works</h3>
           <div className="space-y-3 text-left">
-            <div className="flex items-start gap-3">
-              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-sm font-bold">1</span>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                <strong>Double inhale</strong> through your nose — one deep breath in, then a quick second sip of air on top
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-sm font-bold">2</span>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                <strong>Long exhale</strong> slowly through your mouth — let it be twice as long as the inhale
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-sm font-bold">3</span>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                <strong>Repeat 6 times</strong> — about one minute total
-              </p>
-            </div>
+            {[
+              { n: 1, text: <><strong>Double inhale</strong> through your nose — one deep breath in, then a quick second sip of air on top</> },
+              { n: 2, text: <><strong>Long exhale</strong> slowly through your mouth — let it be twice as long as the inhale</> },
+              { n: 3, text: <><strong>Repeat 6 times</strong> — about one minute total</> },
+            ].map(({ n, text }) => (
+              <div key={n} className="flex items-start gap-3">
+                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-400 flex items-center justify-center text-sm font-bold">
+                  {n}
+                </span>
+                <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">{text}</p>
+              </div>
+            ))}
           </div>
         </div>
-        <Button
-          onClick={start}
-          size="lg"
-          className={cn("bg-gradient-to-r text-white border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}
-        >
+        <Button onClick={start} size="lg" className={cn("bg-gradient-to-r text-white border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}>
           <Play size={18} /> Begin
         </Button>
       </div>
@@ -343,29 +296,20 @@ const PhysiologicalSighExercise: React.FC<{
 
   return (
     <div className="flex flex-col items-center gap-8 py-4 animate-in fade-in duration-300">
-      <BreathingCircle
-        phase={currentPhase.name}
-        progress={phaseProgress}
-        gradient={gradient}
-        isPaused={!isRunning}
-      />
+      <BreathingCircle phase={currentPhase.name} progress={phaseProgress} gradient={gradient} isPaused={!isRunning} />
       <div className="text-center space-y-1">
-        <p className="text-sm text-slate-400 font-medium">
+        <p className="text-sm text-slate-400 dark:text-slate-500 font-medium">
           Cycle {cycle + 1} of {SIGH_CYCLES}
         </p>
-        <div className="w-48 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+        <div className="w-48 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
           <div
             className={cn("h-full bg-gradient-to-r rounded-full transition-all duration-300", gradient)}
-            style={{
-              width: `${((cycle * SIGH_PHASES.length + phaseIdx + phaseProgress) / (SIGH_CYCLES * SIGH_PHASES.length)) * 100}%`,
-            }}
+            style={{ width: `${((cycle * SIGH_PHASES.length + phaseIdx + phaseProgress) / (SIGH_CYCLES * SIGH_PHASES.length)) * 100}%` }}
           />
         </div>
       </div>
       <div className="flex gap-3">
-        <Button variant="outline" size="sm" onClick={reset} className="gap-2">
-          <RotateCcw size={14} /> Reset
-        </Button>
+        <Button variant="outline" size="sm" onClick={reset} className="gap-2"><RotateCcw size={14} /> Reset</Button>
         <Button variant="outline" size="sm" onClick={togglePause} className="gap-2">
           {isRunning ? <Pause size={14} /> : <Play size={14} />}
           {isRunning ? "Pause" : "Resume"}
@@ -436,30 +380,17 @@ const BoxBreathingExercise: React.FC<{
     } else if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [isRunning, tick]);
 
-  const start = () => {
-    setHasStarted(true);
-    setIsRunning(true);
-  };
-
+  const start = () => { setHasStarted(true); setIsRunning(true); };
   const togglePause = () => setIsRunning((r) => !r);
-
   const reset = () => {
-    setIsRunning(false);
-    setHasStarted(false);
-    setCycle(0);
-    setPhaseIdx(0);
-    setPhaseProgress(0);
-    setCountdown(4);
-    setCompleted(false);
+    setIsRunning(false); setHasStarted(false); setCycle(0);
+    setPhaseIdx(0); setPhaseProgress(0); setCountdown(4); setCompleted(false);
   };
 
-  // Box visualization — which side is active
-  const boxSide = phaseIdx; // 0=top(inhale), 1=right(hold), 2=bottom(exhale), 3=left(hold)
+  const boxSide = phaseIdx;
 
   if (completed) {
     return (
@@ -468,18 +399,14 @@ const BoxBreathingExercise: React.FC<{
           <Sparkles className="text-white" size={32} />
         </div>
         <div className="text-center space-y-2">
-          <h3 className="text-2xl font-bold text-slate-800">Great work</h3>
-          <p className="text-slate-500 max-w-xs">
+          <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Great work</h3>
+          <p className="text-slate-500 dark:text-slate-400 max-w-xs">
             You completed {BOX_CYCLES} cycles of box breathing. Your nervous system is more balanced now.
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={reset} className="gap-2">
-            <RotateCcw size={16} /> Again
-          </Button>
-          <Button onClick={onComplete} className={cn("bg-gradient-to-r text-white border-0", gradient)}>
-            Done
-          </Button>
+          <Button variant="outline" onClick={reset} className="gap-2"><RotateCcw size={16} /> Again</Button>
+          <Button onClick={onComplete} className={cn("bg-gradient-to-r text-white border-0", gradient)}>Done</Button>
         </div>
       </div>
     );
@@ -489,29 +416,22 @@ const BoxBreathingExercise: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-8 animate-in fade-in duration-500">
         <div className="text-center space-y-4 max-w-md">
-          <h3 className="text-xl font-semibold text-slate-700">How it works</h3>
+          <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200">How it works</h3>
           <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
             {["Inhale 4s", "Hold 4s", "Exhale 4s", "Hold 4s"].map((label, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-center gap-2 py-3 px-4 bg-violet-50 rounded-xl text-violet-700 text-sm font-medium"
-              >
-                <span className="w-5 h-5 rounded-full bg-violet-200 text-violet-700 flex items-center justify-center text-xs font-bold">
+              <div key={i} className="flex items-center justify-center gap-2 py-3 px-4 bg-violet-50 dark:bg-violet-900/30 rounded-xl text-violet-700 dark:text-violet-300 text-sm font-medium">
+                <span className="w-5 h-5 rounded-full bg-violet-200 dark:bg-violet-800 text-violet-700 dark:text-violet-300 flex items-center justify-center text-xs font-bold">
                   {i + 1}
                 </span>
                 {label}
               </div>
             ))}
           </div>
-          <p className="text-slate-500 text-sm">
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
             Repeat for {BOX_CYCLES} cycles (about 2 minutes)
           </p>
         </div>
-        <Button
-          onClick={start}
-          size="lg"
-          className={cn("bg-gradient-to-r text-white border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}
-        >
+        <Button onClick={start} size="lg" className={cn("bg-gradient-to-r text-white border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}>
           <Play size={18} /> Begin
         </Button>
       </div>
@@ -520,26 +440,21 @@ const BoxBreathingExercise: React.FC<{
 
   return (
     <div className="flex flex-col items-center gap-8 py-4 animate-in fade-in duration-300">
-      {/* Box visualization */}
       <div className="relative w-56 h-56 sm:w-64 sm:h-64">
         <svg viewBox="0 0 200 200" className="w-full h-full">
-          {/* Background box */}
           <rect x="20" y="20" width="160" height="160" rx="16" fill="none" stroke="#e2e8f0" strokeWidth="4" />
-
-          {/* Animated sides */}
           {[
-            { x1: 20, y1: 20, x2: 180, y2: 20 },   // top - inhale
-            { x1: 180, y1: 20, x2: 180, y2: 180 },  // right - hold
-            { x1: 180, y1: 180, x2: 20, y2: 180 },  // bottom - exhale
-            { x1: 20, y1: 180, x2: 20, y2: 20 },    // left - hold
+            { x1: 20, y1: 20, x2: 180, y2: 20 },
+            { x1: 180, y1: 20, x2: 180, y2: 180 },
+            { x1: 180, y1: 180, x2: 20, y2: 180 },
+            { x1: 20, y1: 180, x2: 20, y2: 20 },
           ].map((line, i) => {
             const isActive = boxSide === i;
             const isPast = i < boxSide || (i === 0 && boxSide === 0 && cycle > 0);
             return (
               <line
                 key={i}
-                x1={line.x1}
-                y1={line.y1}
+                x1={line.x1} y1={line.y1}
                 x2={isActive ? line.x1 + (line.x2 - line.x1) * phaseProgress : isPast ? line.x2 : line.x1}
                 y2={isActive ? line.y1 + (line.y2 - line.y1) * phaseProgress : isPast ? line.y2 : line.y1}
                 stroke={isActive ? "url(#boxGrad)" : isPast ? "#a78bfa" : "#e2e8f0"}
@@ -548,8 +463,6 @@ const BoxBreathingExercise: React.FC<{
               />
             );
           })}
-
-          {/* Dot */}
           {(() => {
             const lines = [
               { x1: 20, y1: 20, x2: 180, y2: 20 },
@@ -567,7 +480,6 @@ const BoxBreathingExercise: React.FC<{
               </>
             );
           })()}
-
           <defs>
             <linearGradient id="boxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#8b5cf6" />
@@ -575,32 +487,24 @@ const BoxBreathingExercise: React.FC<{
             </linearGradient>
           </defs>
         </svg>
-
-        {/* Center text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-4xl font-bold text-violet-600">{countdown}</span>
-          <span className="text-sm font-medium text-slate-500 mt-1">{currentPhase.name}</span>
+          <span className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">{currentPhase.name}</span>
         </div>
       </div>
 
       <div className="text-center space-y-1">
-        <p className="text-sm text-slate-400 font-medium">
-          Cycle {cycle + 1} of {BOX_CYCLES}
-        </p>
-        <div className="w-48 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+        <p className="text-sm text-slate-400 dark:text-slate-500 font-medium">Cycle {cycle + 1} of {BOX_CYCLES}</p>
+        <div className="w-48 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
           <div
             className={cn("h-full bg-gradient-to-r rounded-full transition-all duration-300", gradient)}
-            style={{
-              width: `${((cycle * BOX_PHASES.length + phaseIdx + phaseProgress) / (BOX_CYCLES * BOX_PHASES.length)) * 100}%`,
-            }}
+            style={{ width: `${((cycle * BOX_PHASES.length + phaseIdx + phaseProgress) / (BOX_CYCLES * BOX_PHASES.length)) * 100}%` }}
           />
         </div>
       </div>
 
       <div className="flex gap-3">
-        <Button variant="outline" size="sm" onClick={reset} className="gap-2">
-          <RotateCcw size={14} /> Reset
-        </Button>
+        <Button variant="outline" size="sm" onClick={reset} className="gap-2"><RotateCcw size={14} /> Reset</Button>
         <Button variant="outline" size="sm" onClick={togglePause} className="gap-2">
           {isRunning ? <Pause size={14} /> : <Play size={14} />}
           {isRunning ? "Pause" : "Resume"}
@@ -615,46 +519,11 @@ const BoxBreathingExercise: React.FC<{
    ──────────────────────────────────────────── */
 
 const GROUNDING_STEPS = [
-  {
-    count: 5,
-    sense: "See",
-    instruction: "Look around and name 5 things you can see",
-    examples: "A window, a pen, your hands, a shadow, a color on the wall...",
-    emoji: "👁",
-    color: "emerald",
-  },
-  {
-    count: 4,
-    sense: "Touch",
-    instruction: "Notice 4 things you can physically feel",
-    examples: "Your feet on the floor, fabric on your skin, air on your face, the chair beneath you...",
-    emoji: "✋",
-    color: "teal",
-  },
-  {
-    count: 3,
-    sense: "Hear",
-    instruction: "Listen for 3 sounds around you",
-    examples: "Traffic, a fan humming, birds, your own breathing...",
-    emoji: "👂",
-    color: "cyan",
-  },
-  {
-    count: 2,
-    sense: "Smell",
-    instruction: "Notice 2 things you can smell",
-    examples: "Coffee, soap, fresh air, your clothing...",
-    emoji: "👃",
-    color: "sky",
-  },
-  {
-    count: 1,
-    sense: "Taste",
-    instruction: "Notice 1 thing you can taste",
-    examples: "Toothpaste, coffee, the inside of your mouth...",
-    emoji: "👅",
-    color: "indigo",
-  },
+  { count: 5, sense: "See", instruction: "Look around and name 5 things you can see", examples: "A window, a pen, your hands, a shadow, a color on the wall...", emoji: "👁", color: "emerald" },
+  { count: 4, sense: "Touch", instruction: "Notice 4 things you can physically feel", examples: "Your feet on the floor, fabric on your skin, air on your face, the chair beneath you...", emoji: "✋", color: "teal" },
+  { count: 3, sense: "Hear", instruction: "Listen for 3 sounds around you", examples: "Traffic, a fan humming, birds, your own breathing...", emoji: "👂", color: "cyan" },
+  { count: 2, sense: "Smell", instruction: "Notice 2 things you can smell", examples: "Coffee, soap, fresh air, your clothing...", emoji: "👃", color: "sky" },
+  { count: 1, sense: "Taste", instruction: "Notice 1 thing you can taste", examples: "Toothpaste, coffee, the inside of your mouth...", emoji: "👅", color: "indigo" },
 ];
 
 const GroundingExercise: React.FC<{
@@ -662,7 +531,7 @@ const GroundingExercise: React.FC<{
   onBack: () => void;
   gradient: string;
 }> = ({ onComplete, gradient }) => {
-  const [step, setStep] = useState(-1); // -1 = intro
+  const [step, setStep] = useState(-1);
   const [completed, setCompleted] = useState(false);
 
   const current = GROUNDING_STEPS[step];
@@ -674,8 +543,8 @@ const GroundingExercise: React.FC<{
           <Sparkles className="text-white" size={32} />
         </div>
         <div className="text-center space-y-2">
-          <h3 className="text-2xl font-bold text-slate-800">You're grounded</h3>
-          <p className="text-slate-500 max-w-xs">
+          <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">You're grounded</h3>
+          <p className="text-slate-500 dark:text-slate-400 max-w-xs">
             You've reconnected with the present moment through all five senses. Notice the calm.
           </p>
         </div>
@@ -683,9 +552,7 @@ const GroundingExercise: React.FC<{
           <Button variant="outline" onClick={() => { setStep(-1); setCompleted(false); }} className="gap-2">
             <RotateCcw size={16} /> Again
           </Button>
-          <Button onClick={onComplete} className={cn("bg-gradient-to-r text-white border-0", gradient)}>
-            Done
-          </Button>
+          <Button onClick={onComplete} className={cn("bg-gradient-to-r text-white border-0", gradient)}>Done</Button>
         </div>
       </div>
     );
@@ -695,27 +562,20 @@ const GroundingExercise: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-8 animate-in fade-in duration-500">
         <div className="text-center space-y-4 max-w-md">
-          <h3 className="text-xl font-semibold text-slate-700">How it works</h3>
-          <p className="text-slate-500 text-sm leading-relaxed">
+          <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200">How it works</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
             You'll engage each of your five senses, one at a time, to anchor yourself
             in the present moment. Take your time with each step.
           </p>
           <div className="flex justify-center gap-3 flex-wrap">
             {GROUNDING_STEPS.map((s) => (
-              <span
-                key={s.count}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium"
-              >
+              <span key={s.count} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium">
                 <span>{s.emoji}</span> {s.count} {s.sense}
               </span>
             ))}
           </div>
         </div>
-        <Button
-          onClick={() => setStep(0)}
-          size="lg"
-          className={cn("bg-gradient-to-r text-white border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}
-        >
+        <Button onClick={() => setStep(0)} size="lg" className={cn("bg-gradient-to-r text-white border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}>
           <Play size={18} /> Begin
         </Button>
       </div>
@@ -724,48 +584,31 @@ const GroundingExercise: React.FC<{
 
   return (
     <div className="flex flex-col items-center gap-8 py-4 animate-in fade-in slide-in-from-right-4 duration-300" key={step}>
-      {/* Progress dots */}
       <div className="flex gap-2">
         {GROUNDING_STEPS.map((_, i) => (
-          <div
-            key={i}
-            className={cn(
-              "w-2.5 h-2.5 rounded-full transition-all duration-300",
-              i < step ? "bg-emerald-400" : i === step ? "bg-emerald-500 w-8" : "bg-slate-200"
-            )}
-          />
+          <div key={i} className={cn("w-2.5 h-2.5 rounded-full transition-all duration-300", i < step ? "bg-emerald-400" : i === step ? "bg-emerald-500 w-8" : "bg-slate-200 dark:bg-slate-600")} />
         ))}
       </div>
 
-      {/* Main card */}
       <div className="w-full max-w-sm">
-        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-8 text-center space-y-5 border border-emerald-100">
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-2xl p-8 text-center space-y-5 border border-emerald-100 dark:border-emerald-800/50">
           <span className="text-5xl">{current.emoji}</span>
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/80 rounded-full text-emerald-700 text-xs font-bold tracking-wider uppercase">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/80 dark:bg-slate-700/80 rounded-full text-emerald-700 dark:text-emerald-300 text-xs font-bold tracking-wider uppercase">
               {current.count} things you can {current.sense.toLowerCase()}
             </div>
-            <p className="text-slate-700 font-medium text-lg">{current.instruction}</p>
-            <p className="text-slate-400 text-sm italic">{current.examples}</p>
+            <p className="text-slate-700 dark:text-slate-200 font-medium text-lg">{current.instruction}</p>
+            <p className="text-slate-400 dark:text-slate-500 text-sm italic">{current.examples}</p>
           </div>
         </div>
       </div>
 
-      {/* Navigation */}
       <div className="flex gap-3">
         {step > 0 && (
-          <Button variant="outline" size="sm" onClick={() => setStep(step - 1)}>
-            Back
-          </Button>
+          <Button variant="outline" size="sm" onClick={() => setStep(step - 1)}>Back</Button>
         )}
         <Button
-          onClick={() => {
-            if (step < GROUNDING_STEPS.length - 1) {
-              setStep(step + 1);
-            } else {
-              setCompleted(true);
-            }
-          }}
+          onClick={() => { if (step < GROUNDING_STEPS.length - 1) { setStep(step + 1); } else { setCompleted(true); } }}
           size="sm"
           className={cn("bg-gradient-to-r text-white border-0 gap-1", gradient)}
         >
@@ -783,7 +626,7 @@ const GroundingExercise: React.FC<{
 interface GuidedStep {
   title: string;
   instruction: string;
-  duration: number; // seconds
+  duration: number;
 }
 
 const BODY_SCAN_STEPS: GuidedStep[] = [
@@ -823,7 +666,7 @@ const GuidedExercise: React.FC<{
   gradient: string;
 }> = ({ toolId, onComplete, gradient }) => {
   const steps = STEP_DATA[toolId] || [];
-  const [stepIdx, setStepIdx] = useState(-1); // -1 = intro
+  const [stepIdx, setStepIdx] = useState(-1);
   const [timeLeft, setTimeLeft] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [completed, setCompleted] = useState(false);
@@ -837,7 +680,6 @@ const GuidedExercise: React.FC<{
         setTimeLeft((t) => {
           if (t <= 1) {
             clearInterval(intervalRef.current!);
-            // Auto-advance
             if (stepIdx < steps.length - 1) {
               setStepIdx((s) => s + 1);
               return steps[stepIdx + 1].duration;
@@ -851,23 +693,11 @@ const GuidedExercise: React.FC<{
         });
       }, 1000);
     }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [isRunning, stepIdx, steps, timeLeft]);
 
-  const start = () => {
-    setStepIdx(0);
-    setTimeLeft(steps[0].duration);
-    setIsRunning(true);
-  };
-
-  const reset = () => {
-    setIsRunning(false);
-    setStepIdx(-1);
-    setTimeLeft(0);
-    setCompleted(false);
-  };
+  const start = () => { setStepIdx(0); setTimeLeft(steps[0].duration); setIsRunning(true); };
+  const reset = () => { setIsRunning(false); setStepIdx(-1); setTimeLeft(0); setCompleted(false); };
 
   if (completed) {
     return (
@@ -876,18 +706,14 @@ const GuidedExercise: React.FC<{
           <Sparkles className="text-white" size={32} />
         </div>
         <div className="text-center space-y-2">
-          <h3 className="text-2xl font-bold text-slate-800">Beautiful</h3>
-          <p className="text-slate-500 max-w-xs">
+          <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Beautiful</h3>
+          <p className="text-slate-500 dark:text-slate-400 max-w-xs">
             Take a moment to notice how you feel now compared to when you started.
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" onClick={reset} className="gap-2">
-            <RotateCcw size={16} /> Again
-          </Button>
-          <Button onClick={onComplete} className={cn("bg-gradient-to-r text-white border-0", gradient)}>
-            Done
-          </Button>
+          <Button variant="outline" onClick={reset} className="gap-2"><RotateCcw size={16} /> Again</Button>
+          <Button onClick={onComplete} className={cn("bg-gradient-to-r text-white border-0", gradient)}>Done</Button>
         </div>
       </div>
     );
@@ -897,69 +723,54 @@ const GuidedExercise: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-8 animate-in fade-in duration-500">
         <div className="text-center space-y-4 max-w-md">
-          <h3 className="text-xl font-semibold text-slate-700">
+          <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200">
             {steps.length} guided steps
           </h3>
-          <p className="text-slate-500 text-sm leading-relaxed">
+          <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
             Each step will display for a set time, then gently transition to the next.
             Find a comfortable position and let yourself be guided.
           </p>
-          <div className="flex items-center justify-center gap-2 text-sm text-slate-400">
+          <div className="flex items-center justify-center gap-2 text-sm text-slate-400 dark:text-slate-500">
             <Timer size={14} />
             About {Math.ceil(steps.reduce((a, s) => a + s.duration, 0) / 60)} min total
           </div>
         </div>
-        <Button
-          onClick={start}
-          size="lg"
-          className={cn("bg-gradient-to-r text-white border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}
-        >
+        <Button onClick={start} size="lg" className={cn("bg-gradient-to-r text-white border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}>
           <Play size={18} /> Begin
         </Button>
       </div>
     );
   }
 
-  const progressPercent =
-    ((stepIdx + (1 - timeLeft / currentStep.duration)) / steps.length) * 100;
+  const progressPercent = ((stepIdx + (1 - timeLeft / currentStep.duration)) / steps.length) * 100;
 
   return (
     <div className="flex flex-col items-center gap-8 py-4 animate-in fade-in duration-300" key={stepIdx}>
-      {/* Progress */}
       <div className="w-full max-w-sm">
-        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
           <div
             className={cn("h-full bg-gradient-to-r rounded-full transition-all duration-1000 ease-linear", gradient)}
             style={{ width: `${progressPercent}%` }}
           />
         </div>
-        <div className="flex justify-between mt-2 text-xs text-slate-400">
+        <div className="flex justify-between mt-2 text-xs text-slate-400 dark:text-slate-500">
           <span>Step {stepIdx + 1} of {steps.length}</span>
           <span>{timeLeft}s</span>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-500" key={stepIdx}>
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 text-center space-y-4">
-          <h4 className="text-lg font-bold text-slate-800">{currentStep.title}</h4>
-          <p className="text-slate-600 leading-relaxed text-sm">
-            {currentStep.instruction}
-          </p>
+      <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-500" key={`card-${stepIdx}`}>
+        <div className="bg-white dark:bg-slate-700 rounded-2xl p-8 shadow-sm border border-slate-100 dark:border-slate-600 text-center space-y-4">
+          <h4 className="text-lg font-bold text-slate-800 dark:text-slate-100">{currentStep.title}</h4>
+          <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-sm">{currentStep.instruction}</p>
         </div>
       </div>
 
-      {/* Timer ring */}
       <div className="relative w-16 h-16">
         <svg viewBox="0 0 60 60" className="w-full h-full -rotate-90">
           <circle cx="30" cy="30" r="26" fill="none" stroke="#f1f5f9" strokeWidth="4" />
           <circle
-            cx="30"
-            cy="30"
-            r="26"
-            fill="none"
-            stroke="url(#timerGrad)"
-            strokeWidth="4"
+            cx="30" cy="30" r="26" fill="none" stroke="url(#timerGrad)" strokeWidth="4"
             strokeLinecap="round"
             strokeDasharray={2 * Math.PI * 26}
             strokeDashoffset={2 * Math.PI * 26 * (1 - timeLeft / currentStep.duration)}
@@ -972,7 +783,7 @@ const GuidedExercise: React.FC<{
             </linearGradient>
           </defs>
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-slate-600">
+        <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-slate-600 dark:text-slate-300">
           {timeLeft}
         </span>
       </div>
@@ -996,17 +807,15 @@ const ToolDetail: React.FC<{
 
   return (
     <div className="w-full max-w-xl mx-auto animate-in fade-in duration-300">
-      {/* Header */}
       <button
         onClick={onBack}
-        className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 transition-colors mb-6 group"
+        className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors mb-6 group"
       >
         <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
         Back to Tools
       </button>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        {/* Tool header */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
         <div className={cn("bg-gradient-to-r p-6 sm:p-8", tool.gradient)}>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
@@ -1019,36 +828,18 @@ const ToolDetail: React.FC<{
           </div>
         </div>
 
-        {/* Exercise content */}
         <div className="p-4 sm:p-6">
           {tool.id === "physiological-sigh" && (
-            <PhysiologicalSighExercise
-              onComplete={handleComplete}
-              onBack={onBack}
-              gradient={tool.gradient}
-            />
+            <PhysiologicalSighExercise onComplete={handleComplete} onBack={onBack} gradient={tool.gradient} />
           )}
           {tool.id === "box-breathing" && (
-            <BoxBreathingExercise
-              onComplete={handleComplete}
-              onBack={onBack}
-              gradient={tool.gradient}
-            />
+            <BoxBreathingExercise onComplete={handleComplete} onBack={onBack} gradient={tool.gradient} />
           )}
           {tool.id === "grounding-54321" && (
-            <GroundingExercise
-              onComplete={handleComplete}
-              onBack={onBack}
-              gradient={tool.gradient}
-            />
+            <GroundingExercise onComplete={handleComplete} onBack={onBack} gradient={tool.gradient} />
           )}
           {(tool.id === "body-scan" || tool.id === "mindful-moment" || tool.id === "self-compassion") && (
-            <GuidedExercise
-              toolId={tool.id}
-              onComplete={handleComplete}
-              onBack={onBack}
-              gradient={tool.gradient}
-            />
+            <GuidedExercise toolId={tool.id} onComplete={handleComplete} onBack={onBack} gradient={tool.gradient} />
           )}
         </div>
       </div>
@@ -1066,34 +857,24 @@ const ToolCard: React.FC<{
 }> = ({ tool, onClick }) => (
   <button
     onClick={onClick}
-    className="group w-full text-left bg-white rounded-2xl border border-slate-100 p-5 sm:p-6 hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-200 transition-all duration-300 hover:-translate-y-0.5"
+    className="group w-full text-left bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 sm:p-6 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-black/20 hover:border-slate-200 dark:hover:border-slate-600 transition-all duration-300 hover:-translate-y-0.5"
   >
     <div className="flex items-start gap-4">
-      <div
-        className={cn(
-          "flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110",
-          tool.bgAccent
-        )}
-      >
+      <div className={cn("flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110", tool.bgAccent)}>
         <tool.icon className={tool.iconColor} size={22} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="font-semibold text-slate-800 group-hover:text-slate-900 transition-colors">
+          <h3 className="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
             {tool.name}
           </h3>
-          <ChevronRight
-            size={16}
-            className="text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all flex-shrink-0"
-          />
+          <ChevronRight size={16} className="text-slate-300 dark:text-slate-600 group-hover:text-slate-500 dark:group-hover:text-slate-400 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
         </div>
-        <p className="text-sm text-slate-500 mt-0.5">{tool.subtitle}</p>
-        <p className="text-xs text-slate-400 mt-2 line-clamp-2 leading-relaxed">
-          {tool.description}
-        </p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{tool.subtitle}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 line-clamp-2 leading-relaxed">{tool.description}</p>
         <div className="flex items-center gap-1.5 mt-3">
-          <Timer size={12} className="text-slate-400" />
-          <span className="text-xs font-medium text-slate-400">{tool.duration}</span>
+          <Timer size={12} className="text-slate-400 dark:text-slate-500" />
+          <span className="text-xs font-medium text-slate-400 dark:text-slate-500">{tool.duration}</span>
         </div>
       </div>
     </div>
@@ -1121,14 +902,14 @@ const Tools: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 animate-in fade-in duration-500">
       {/* Hero */}
       <div className="text-center mb-10 sm:mb-14">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-50 rounded-full text-teal-700 text-xs font-semibold tracking-wider uppercase mb-4">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-50 dark:bg-teal-900/30 rounded-full text-teal-700 dark:text-teal-300 text-xs font-semibold tracking-wider uppercase mb-4">
           <Sparkles size={14} />
           Wellness Toolkit
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 tracking-tight">
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
           Tools for your mind
         </h1>
-        <p className="text-slate-500 mt-3 max-w-lg mx-auto text-sm sm:text-base leading-relaxed">
+        <p className="text-slate-500 dark:text-slate-400 mt-3 max-w-lg mx-auto text-sm sm:text-base leading-relaxed">
           Quick, science-backed exercises to calm your nervous system,
           ground your thoughts, and reset your day.
         </p>
@@ -1141,18 +922,14 @@ const Tools: React.FC = () => {
           return (
             <div key={cat}>
               <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-sm font-bold text-slate-400 tracking-wider uppercase">
+                <h2 className="text-sm font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase">
                   {categoryLabels[cat]}
                 </h2>
-                <div className="flex-1 h-px bg-slate-100" />
+                <div className="flex-1 h-px bg-slate-100 dark:bg-slate-700" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {categoryTools.map((tool) => (
-                  <ToolCard
-                    key={tool.id}
-                    tool={tool}
-                    onClick={() => setActiveTool(tool)}
-                  />
+                  <ToolCard key={tool.id} tool={tool} onClick={() => setActiveTool(tool)} />
                 ))}
               </div>
             </div>
