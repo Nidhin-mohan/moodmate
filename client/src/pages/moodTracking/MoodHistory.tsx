@@ -12,7 +12,6 @@ import {
   Moon,
   Dumbbell,
   Brain,
-  Timer,
   Tag,
   Users,
 } from "lucide-react";

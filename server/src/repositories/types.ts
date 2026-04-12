@@ -10,7 +10,7 @@ export interface QueryOptions<TFilter = Record<string, unknown>> {
   select?: string[];
   sort?: {
     field: string;
-    order: "asc" | "desc";
+    order: 'asc' | 'desc';
   };
   pagination?: {
     skip: number;

@@ -1,13 +1,13 @@
-import { HTTP_STATUS, MESSAGES } from "../constants/httpStatusCodes";
-import { asyncHandler } from "../utils/asyncHandler";
-import { registerSchema, loginSchema } from "../validations/userValidation";
+import { HTTP_STATUS, MESSAGES } from '../constants/httpStatusCodes';
+import { asyncHandler } from '../utils/asyncHandler';
+import { registerSchema, loginSchema } from '../validations/userValidation';
 import {
   registerUserService,
   loginUserService,
   getUserProfileService,
-} from "../services/authService";
+} from '../services/authService';
 
-export const registerUser = asyncHandler("User Registration", async (req, res) => {
+export const registerUser = asyncHandler('User Registration', async (req, res) => {
   const { name, email, password } = registerSchema.parse(req.body);
   const userData = await registerUserService(name, email, password);
 
@@ -18,7 +18,7 @@ export const registerUser = asyncHandler("User Registration", async (req, res) =
   });
 });
 
-export const loginUser = asyncHandler("User Login", async (req, res) => {
+export const loginUser = asyncHandler('User Login', async (req, res) => {
   const { email, password } = loginSchema.parse(req.body);
   const userData = await loginUserService(email, password);
 
@@ -29,7 +29,7 @@ export const loginUser = asyncHandler("User Login", async (req, res) => {
   });
 });
 
-export const getUserProfile = asyncHandler("Get User Profile", async (req, res) => {
+export const getUserProfile = asyncHandler('Get User Profile', async (req, res) => {
   const userId = req.user!._id.toString();
   const userData = await getUserProfileService(userId);
 

@@ -1,7 +1,13 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document } from 'mongoose';
 
 export type SocialQuality = 'isolated' | 'neutral' | 'connected';
-export type MoodTriggerCategory = 'work' | 'relationships' | 'health' | 'finances' | 'environment' | 'random';
+export type MoodTriggerCategory =
+  | 'work'
+  | 'relationships'
+  | 'health'
+  | 'finances'
+  | 'environment'
+  | 'random';
 
 export interface IMoodLog extends Document {
   user: mongoose.Types.ObjectId;
@@ -9,17 +15,17 @@ export interface IMoodLog extends Document {
   specificEmotion?: string;
   intensity: number;
   energyLevel: number;
-  stressLevel?: number;       // 1-10, distinct from intensity
-  anxietyLevel?: number;      // 1-10, orthogonal to mood valence
+  stressLevel?: number; // 1-10, distinct from intensity
+  anxietyLevel?: number; // 1-10, orthogonal to mood valence
   tagsPeople: string[];
   tagsPlaces: string[];
   tagsEvents: string[];
-  socialQuality?: SocialQuality;         // quality of social contact that day
+  socialQuality?: SocialQuality; // quality of social contact that day
   moodTriggerCategory?: MoodTriggerCategory;
   sleepHours: number;
   sleepQuality: number;
   exercise: boolean;
-  exerciseMinutes?: number;   // replaces the binary with actual duration
+  exerciseMinutes?: number; // replaces the binary with actual duration
   notes?: string;
   reflections?: string;
   aiAnalysis?: string;
@@ -30,7 +36,7 @@ const moodLogSchema: Schema = new Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
     },
     mood: { type: String, required: true },
@@ -56,12 +62,12 @@ const moodLogSchema: Schema = new Schema(
     aiAnalysis: { type: String },
     date: { type: Date, default: Date.now },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Index for faster queries
 moodLogSchema.index({ user: 1, date: -1 });
 
-const MoodLog = mongoose.model<IMoodLog>("MoodLog", moodLogSchema);
+const MoodLog = mongoose.model<IMoodLog>('MoodLog', moodLogSchema);
 
 export default MoodLog;

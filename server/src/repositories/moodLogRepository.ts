@@ -1,7 +1,7 @@
-import { Types } from "mongoose";
-import { BaseRepository } from "./baseRepository";
-import MoodLog, { IMoodLog } from "../models/moodLogModel";
-import type { AggregatedStats } from "./types";
+import { Types } from 'mongoose';
+import { BaseRepository } from './baseRepository';
+import MoodLog, { IMoodLog } from '../models/moodLogModel';
+import type { AggregatedStats } from './types';
 
 // ─── MoodLog-specific filter shape ───────────────────────────────
 export interface MoodLogFilter {
@@ -29,44 +29,42 @@ class MoodLogRepository extends BaseRepository<IMoodLog> {
   // These enforce ownership — the service can't accidentally
   // forget to filter by userId.
 
-  async findByUserAndId(
-    userId: string,
-    moodId: string
-  ): Promise<IMoodLog | null> {
-    return this.findOne({ _id: moodId, user: userId } as any);
+  async findByUserAndId(userId: string, moodId: string): Promise<IMoodLog | null> {
+    return this.findOne({ _id: moodId, user: userId } as Parameters<typeof this.findOne>[0]);
   }
 
   async updateByUserAndId(
     userId: string,
     moodId: string,
-    data: Record<string, unknown>
+    data: Record<string, unknown>,
   ): Promise<IMoodLog | null> {
     return this.model
       .findOneAndUpdate(
         { _id: moodId, user: userId },
         { $set: data },
-        { new: true, runValidators: true }
+        { new: true, runValidators: true },
       )
       .exec();
   }
 
-  async deleteByUserAndId(
-    userId: string,
-    moodId: string
-  ): Promise<IMoodLog | null> {
+  async deleteByUserAndId(userId: string, moodId: string): Promise<IMoodLog | null> {
+    return this.model.findOneAndDelete({ _id: moodId, user: userId }).exec();
+  }
+
+  // Returns all logs for a user on or after `since`, sorted by date desc.
+  // No pagination — used for weekly analysis where we need the full set.
+  async findRecentByUser(userId: string, since: Date): Promise<IMoodLog[]> {
     return this.model
-      .findOneAndDelete({ _id: moodId, user: userId })
-      .exec();
+      .find({ user: new Types.ObjectId(userId), date: { $gte: since } })
+      .sort({ date: -1 })
+      .lean() as unknown as IMoodLog[];
   }
 
   // ── Aggregation ────────────────────────────────────────────
   // This is the most MongoDB-specific code in the entire app.
   // If you switch to PostgreSQL, this becomes a SQL query with
   // GROUP BY and AVG() — but the interface stays the same.
-  async getStatsByUser(
-    userId: string,
-    startDate: Date
-  ): Promise<AggregatedStats> {
+  async getStatsByUser(userId: string, startDate: Date): Promise<AggregatedStats> {
     const matchStage = {
       $match: {
         user: new Types.ObjectId(userId),
@@ -80,10 +78,10 @@ class MoodLogRepository extends BaseRepository<IMoodLog> {
         {
           $group: {
             _id: null,
-            avgIntensity: { $avg: "$intensity" },
-            avgEnergyLevel: { $avg: "$energyLevel" },
-            avgSleepHours: { $avg: "$sleepHours" },
-            avgSleepQuality: { $avg: "$sleepQuality" },
+            avgIntensity: { $avg: '$intensity' },
+            avgEnergyLevel: { $avg: '$energyLevel' },
+            avgSleepHours: { $avg: '$sleepHours' },
+            avgSleepQuality: { $avg: '$sleepQuality' },
             totalLogs: { $sum: 1 },
           },
         },
@@ -92,7 +90,7 @@ class MoodLogRepository extends BaseRepository<IMoodLog> {
         matchStage,
         {
           $group: {
-            _id: "$mood",
+            _id: '$mood',
             count: { $sum: 1 },
           },
         },

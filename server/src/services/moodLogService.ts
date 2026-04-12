@@ -1,11 +1,8 @@
-import { IMoodLog } from "../models/moodLogModel";
-import { NotFoundError } from "../utils/customError";
-import { moodLogRepository, MoodLogFilter } from "../repositories/moodLogRepository";
-import type { QueryOptions } from "../repositories/types";
-import type {
-  CreateMoodLogInput,
-  UpdateMoodLogInput,
-} from "../validations/moodLogValidation";
+import { IMoodLog } from '../models/moodLogModel';
+import { NotFoundError } from '../utils/customError';
+import { moodLogRepository, MoodLogFilter } from '../repositories/moodLogRepository';
+import type { QueryOptions } from '../repositories/types';
+import type { CreateMoodLogInput, UpdateMoodLogInput } from '../validations/moodLogValidation';
 
 interface GetAllMoodsParams {
   page: number;
@@ -35,7 +32,7 @@ interface MoodStats {
 
 export const createMoodService = async (
   userId: string,
-  data: CreateMoodLogInput
+  data: CreateMoodLogInput,
 ): Promise<IMoodLog> => {
   return moodLogRepository.create({
     user: userId,
@@ -46,7 +43,7 @@ export const createMoodService = async (
 
 export const getAllMoodsService = async (
   userId: string,
-  params: GetAllMoodsParams
+  params: GetAllMoodsParams,
 ): Promise<PaginatedMoodResult> => {
   const { page, limit, startDate, endDate, mood } = params;
   const skip = (page - 1) * limit;
@@ -68,7 +65,7 @@ export const getAllMoodsService = async (
   // One call → gets data + total count. No hand-rolling Promise.all.
   const options: QueryOptions<MoodLogFilter> = {
     filter,
-    sort: { field: "date", order: "desc" },
+    sort: { field: 'date', order: 'desc' },
     pagination: { skip, limit },
   };
 
@@ -83,14 +80,11 @@ export const getAllMoodsService = async (
   };
 };
 
-export const getMoodByIdService = async (
-  moodId: string,
-  userId: string
-): Promise<IMoodLog> => {
+export const getMoodByIdService = async (moodId: string, userId: string): Promise<IMoodLog> => {
   const log = await moodLogRepository.findByUserAndId(userId, moodId);
 
   if (!log) {
-    throw new NotFoundError("Mood log", moodId);
+    throw new NotFoundError('Mood log', moodId);
   }
 
   return log;
@@ -99,43 +93,36 @@ export const getMoodByIdService = async (
 export const updateMoodService = async (
   moodId: string,
   userId: string,
-  data: UpdateMoodLogInput
+  data: UpdateMoodLogInput,
 ): Promise<IMoodLog> => {
   const log = await moodLogRepository.updateByUserAndId(
     userId,
     moodId,
-    data as Record<string, unknown>
+    data as Record<string, unknown>,
   );
 
   if (!log) {
-    throw new NotFoundError("Mood log", moodId);
+    throw new NotFoundError('Mood log', moodId);
   }
 
   return log;
 };
 
-export const deleteMoodService = async (
-  moodId: string,
-  userId: string
-): Promise<IMoodLog> => {
+export const deleteMoodService = async (moodId: string, userId: string): Promise<IMoodLog> => {
   const log = await moodLogRepository.deleteByUserAndId(userId, moodId);
 
   if (!log) {
-    throw new NotFoundError("Mood log", moodId);
+    throw new NotFoundError('Mood log', moodId);
   }
 
   return log;
 };
 
-export const getMoodStatsService = async (
-  userId: string,
-  days: number
-): Promise<MoodStats> => {
+export const getMoodStatsService = async (userId: string, days: number): Promise<MoodStats> => {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
 
-  const { summary, moodCounts } =
-    await moodLogRepository.getStatsByUser(userId, startDate);
+  const { summary, moodCounts } = await moodLogRepository.getStatsByUser(userId, startDate);
 
   const moodBreakdown: Record<string, number> = {};
   for (const entry of moodCounts) {

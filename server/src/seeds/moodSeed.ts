@@ -1,52 +1,52 @@
-import mongoose from "mongoose";
-import MoodLog from "../models/moodLogModel";
-import dotenv from "dotenv";
+import mongoose from 'mongoose';
+import MoodLog from '../models/moodLogModel';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
 // Seed data configuration
-const moods = ["happy", "sad", "anxious", "calm", "angry", "excited", "tired", "neutral"];
+const moods = ['happy', 'sad', 'anxious', 'calm', 'angry', 'excited', 'tired', 'neutral'];
 
 const specificEmotions: Record<string, string[]> = {
-  happy: ["joyful", "content", "grateful", "optimistic"],
-  sad: ["lonely", "disappointed", "melancholic", "grief"],
-  anxious: ["worried", "nervous", "stressed", "overwhelmed"],
-  calm: ["peaceful", "relaxed", "serene", "balanced"],
-  angry: ["frustrated", "irritated", "resentful", "annoyed"],
-  excited: ["enthusiastic", "eager", "thrilled", "energized"],
-  tired: ["exhausted", "drained", "fatigued", "sleepy"],
-  neutral: ["indifferent", "meh", "okay", "stable"],
+  happy: ['joyful', 'content', 'grateful', 'optimistic'],
+  sad: ['lonely', 'disappointed', 'melancholic', 'grief'],
+  anxious: ['worried', 'nervous', 'stressed', 'overwhelmed'],
+  calm: ['peaceful', 'relaxed', 'serene', 'balanced'],
+  angry: ['frustrated', 'irritated', 'resentful', 'annoyed'],
+  excited: ['enthusiastic', 'eager', 'thrilled', 'energized'],
+  tired: ['exhausted', 'drained', 'fatigued', 'sleepy'],
+  neutral: ['indifferent', 'meh', 'okay', 'stable'],
 };
 
-const people = ["family", "friends", "coworkers", "partner", "alone", "strangers"];
-const places = ["home", "office", "outdoors", "gym", "cafe", "commute", "park"];
-const events = ["work", "exercise", "social", "meeting", "meal", "hobby", "rest", "travel"];
+const people = ['family', 'friends', 'coworkers', 'partner', 'alone', 'strangers'];
+const places = ['home', 'office', 'outdoors', 'gym', 'cafe', 'commute', 'park'];
+const events = ['work', 'exercise', 'social', 'meeting', 'meal', 'hobby', 'rest', 'travel'];
 
 const notes = [
-  "Had a productive day today.",
-  "Feeling a bit off, not sure why.",
-  "Great workout session this morning.",
-  "Work was stressful but manageable.",
-  "Spent quality time with family.",
+  'Had a productive day today.',
+  'Feeling a bit off, not sure why.',
+  'Great workout session this morning.',
+  'Work was stressful but manageable.',
+  'Spent quality time with family.',
   "Didn't sleep well last night.",
-  "Meditation helped clear my mind.",
-  "Felt overwhelmed with deadlines.",
-  "Nice weather lifted my mood.",
-  "Had a difficult conversation today.",
-  "",
+  'Meditation helped clear my mind.',
+  'Felt overwhelmed with deadlines.',
+  'Nice weather lifted my mood.',
+  'Had a difficult conversation today.',
+  '',
 ];
 
 const reflections = [
-  "I should focus more on self-care.",
-  "Grateful for the small wins today.",
-  "Need to set better boundaries.",
-  "Tomorrow will be better.",
-  "I handled that situation well.",
-  "Should get more sleep tonight.",
-  "Exercise really helps my mood.",
-  "I need to reach out to friends more.",
-  "Taking things one step at a time.",
-  "",
+  'I should focus more on self-care.',
+  'Grateful for the small wins today.',
+  'Need to set better boundaries.',
+  'Tomorrow will be better.',
+  'I handled that situation well.',
+  'Should get more sleep tonight.',
+  'Exercise really helps my mood.',
+  'I need to reach out to friends more.',
+  'Taking things one step at a time.',
+  '',
 ];
 
 // Helpers
@@ -90,11 +90,11 @@ const generateMoodLog = (userId: string, date: Date) => {
 export const seedMoodLogs = async (
   userId: string,
   days: number = 60,
-  logsPerDay: { min: number; max: number } = { min: 1, max: 3 }
+  logsPerDay: { min: number; max: number } = { min: 1, max: 3 },
 ): Promise<void> => {
   try {
     await mongoose.connect(process.env.MONGO_URI as string);
-    console.log("Connected to MongoDB");
+    console.log('Connected to MongoDB');
 
     // Optional: Clear existing logs for this user
     // await MoodLog.deleteMany({ user: userId });
@@ -122,9 +122,9 @@ export const seedMoodLogs = async (
     console.log(`Seeded ${result.length} mood logs for user ${userId}`);
 
     await mongoose.disconnect();
-    console.log("Disconnected from MongoDB");
+    console.log('Disconnected from MongoDB');
   } catch (error) {
-    console.error("Seed error:", error);
+    console.error('Seed error:', error);
     process.exit(1);
   }
 };
@@ -133,7 +133,7 @@ export const seedMoodLogs = async (
 const userId = process.argv[2];
 
 if (!userId) {
-  console.error("Usage: npx ts-node seeds/moodSeed.ts <userId>");
+  console.error('Usage: npx ts-node seeds/moodSeed.ts <userId>');
   process.exit(1);
 }
 

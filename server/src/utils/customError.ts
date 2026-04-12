@@ -20,14 +20,14 @@ export default class CustomError extends Error {
 // (e.g., a valid format but bad business logic like end date before start date)
 export class BadRequestError extends CustomError {
   constructor(message: string) {
-    super(message, 400, "BAD_REQUEST");
+    super(message, 400, 'BAD_REQUEST');
   }
 }
 
 // 401 — not authenticated (no token, bad token, expired)
 export class UnauthorizedError extends CustomError {
-  constructor(message = "Not authorized") {
-    super(message, 401, "UNAUTHORIZED");
+  constructor(message = 'Not authorized') {
+    super(message, 401, 'UNAUTHORIZED');
   }
 }
 
@@ -37,13 +37,13 @@ export class UnauthorizedError extends CustomError {
 export class NotFoundError extends CustomError {
   constructor(resource: string, id?: string) {
     const message = id ? `${resource} not found: ${id}` : `${resource} not found`;
-    super(message, 404, "NOT_FOUND");
+    super(message, 404, 'NOT_FOUND');
   }
 }
 
 // 409 — trying to create something that already exists
 export class ConflictError extends CustomError {
   constructor(message: string) {
-    super(message, 409, "CONFLICT");
+    super(message, 409, 'CONFLICT');
   }
 }

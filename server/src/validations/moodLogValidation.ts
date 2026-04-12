@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 const socialQualityEnum = z.enum(['isolated', 'neutral', 'connected']);
 const moodTriggerCategoryEnum = z.enum([
@@ -11,7 +11,7 @@ const moodTriggerCategoryEnum = z.enum([
 ]);
 
 export const createMoodLogSchema = z.object({
-  mood: z.string().min(1, "Mood is required"),
+  mood: z.string().min(1, 'Mood is required'),
   specificEmotion: z.string().optional(),
   intensity: z.number().int().min(1).max(10),
   energyLevel: z.number().int().min(1).max(10),

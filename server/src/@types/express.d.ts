@@ -1,4 +1,4 @@
-import { IUser } from "../models/userModel";
+import { IUser } from '../models/userModel';
 
 // This augments Express's built-in Request type globally.
 // After this, req.user is typed as IUser | undefined everywhere —
