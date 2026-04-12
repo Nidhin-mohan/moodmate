@@ -7,3 +7,7 @@ process.env.JWT_SECRET = 'test-secret-key-at-least-16-chars';
 process.env.NODE_ENV = 'test';
 process.env.CORS_ORIGINS = 'http://localhost:5173';
 process.env.GEMINI_API_KEY = 'test-gemini-api-key';
+process.env.SMTP_HOST = 'smtp.example.com';
+process.env.SMTP_PORT = '587';
+process.env.SMTP_USER = 'test@example.com';
+process.env.SMTP_PASS = 'test-smtp-pass';

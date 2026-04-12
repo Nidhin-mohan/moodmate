@@ -14,6 +14,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: UserRole;
+  isPro: boolean;
   matchPassword(enteredPassword: string): Promise<boolean>;
 }
 
@@ -27,6 +28,7 @@ const userSchema: Schema = new Schema(
       enum: Object.values(UserRole),
       default: UserRole.USER,
     },
+    isPro: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

@@ -3,6 +3,8 @@ import { CRON_SCHEDULES } from '../constants/cronSchedules';
 import { logger } from '../utils/logger';
 import { userRepository } from '../repositories/userRepository';
 import { getWeeklyAnalysis } from '../services/moodAnalysis.service';
+import { sendEmail } from '../services/email.service';
+import { weeklyAnalysisTemplate } from '../templates/email/weeklyAnalysis';
 
 const JOB_NAME = 'weekly-mood-analysis';
 
@@ -11,7 +13,8 @@ async function run(): Promise<void> {
   jobLogger.info('Job started');
 
   const { data: users, total } = await userRepository.findAll({
-    select: ['_id'],
+    filter: { isPro: true },
+    select: ['_id', 'name', 'email'],
     pagination: { skip: 0, limit: 10_000 },
   });
 
@@ -29,15 +32,19 @@ async function run(): Promise<void> {
       if (result.status === 'insufficient_data') {
         jobLogger.info({ userId }, 'Skipped — insufficient data (< 3 logs)');
         insufficient++;
-      } else {
-        jobLogger.info(
-          { userId, stats: result.stats, provider: result.provider, analysis: result.analysis },
-          'Analysis complete',
-        );
-        succeeded++;
+        continue;
       }
+
+      await sendEmail(
+        user.email,
+        'Your Weekly Mood Analysis 🌿',
+        weeklyAnalysisTemplate({ name: user.name, analysis: result.analysis, stats: result.stats }),
+      );
+
+      jobLogger.info({ userId, email: user.email, provider: result.provider }, 'Email sent');
+      succeeded++;
     } catch (err: unknown) {
-      jobLogger.error({ userId, err }, 'Failed to generate analysis');
+      jobLogger.error({ userId, err }, 'Failed');
       failed++;
     }
   }

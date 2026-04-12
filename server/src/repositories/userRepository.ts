@@ -6,6 +6,7 @@ export interface UserFilter {
   email?: string;
   role?: string;
   name?: RegExp;
+  isPro?: boolean;
 }
 
 // ─── USER REPOSITORY ─────────────────────────────────────────────
