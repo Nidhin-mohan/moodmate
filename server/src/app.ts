@@ -8,6 +8,7 @@ import { env } from './config/env';
 import { swaggerSpec } from './config/swagger';
 import authRoutes from './routes/authRoutes';
 import moodLogRoutes from './routes/moodLogRoutes';
+import adminRoutes from './routes/admin.routes';
 import { errorHandler, notFound } from './middlewares/errorMiddleware';
 import { requestId } from './middlewares/requestId';
 import { healthLimiter } from './middlewares/rateLimiter';
@@ -56,6 +57,7 @@ if (env.NODE_ENV !== 'production') {
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/mood', moodLogRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 // Error handling
 app.use(notFound);
