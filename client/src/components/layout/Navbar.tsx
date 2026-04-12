@@ -17,9 +17,7 @@ const Navbar: React.FC = () => {
     navigate("/login");
   };
 
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
+  const isActive = (path: string) => location.pathname === path;
 
   const authNavLinks = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
@@ -36,15 +34,15 @@ const Navbar: React.FC = () => {
   const navLinks = isLoggedIn ? authNavLinks : publicNavLinks;
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white/80 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700">
+    <nav className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 h-16">
 
         {/* Brand */}
         <Link
           to={isLoggedIn ? "/dashboard" : "/"}
-          className="text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2"
+          className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2"
         >
-          <span className="text-teal-600">MoodMate</span>
+          <span className="text-primary">MoodMate</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -55,8 +53,8 @@ const Navbar: React.FC = () => {
               to={link.path}
               className={`flex items-center gap-2 text-sm font-medium transition-colors ${
                 isActive(link.path)
-                  ? "text-teal-600"
-                  : "text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400"
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-primary"
               }`}
             >
               <link.icon size={18} />
@@ -70,7 +68,7 @@ const Navbar: React.FC = () => {
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
             aria-label="Toggle dark mode"
           >
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
@@ -80,7 +78,7 @@ const Navbar: React.FC = () => {
             <Button
               variant="ghost"
               onClick={handleLogout}
-              className="text-slate-600 dark:text-slate-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 gap-2"
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-2"
             >
               <LogOut size={18} />
               Logout
@@ -88,13 +86,13 @@ const Navbar: React.FC = () => {
           ) : (
             <>
               <Link to="/login">
-                <Button variant="ghost" className="text-slate-600 dark:text-slate-300 hover:text-teal-600 gap-2">
+                <Button variant="ghost" className="text-muted-foreground hover:text-primary gap-2">
                   <LogIn size={18} />
                   Log In
                 </Button>
               </Link>
               <Link to="/signup">
-                <Button className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
+                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
                   <UserPlus size={18} />
                   Sign Up
                 </Button>
@@ -107,14 +105,14 @@ const Navbar: React.FC = () => {
         <div className="lg:hidden flex items-center gap-2">
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
             aria-label="Toggle dark mode"
           >
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition"
+            className="p-2 text-muted-foreground hover:bg-muted rounded-md transition-colors"
             aria-label="Toggle navigation menu"
           >
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -124,7 +122,7 @@ const Navbar: React.FC = () => {
 
       {/* Mobile Menu Dropdown */}
       {isMenuOpen && (
-        <div className="lg:hidden absolute top-16 left-0 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 shadow-xl py-4 px-4 flex flex-col gap-2 animate-in slide-in-from-top-5 duration-200">
+        <div className="lg:hidden absolute top-16 left-0 w-full bg-card border-b border-border shadow-xl py-4 px-4 flex flex-col gap-2 animate-in slide-in-from-top-5 duration-200">
           {navLinks.map((link) => (
             <Link
               key={link.path}
@@ -132,8 +130,8 @@ const Navbar: React.FC = () => {
               onClick={() => setIsMenuOpen(false)}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-colors ${
                 isActive(link.path)
-                  ? "bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
               <link.icon size={20} />
@@ -141,13 +139,13 @@ const Navbar: React.FC = () => {
             </Link>
           ))}
 
-          <div className="h-px bg-slate-100 dark:bg-slate-700 my-2" />
+          <div className="h-px bg-border my-2" />
 
           {isLoggedIn ? (
             <Button
               onClick={handleLogout}
               variant="ghost"
-              className="w-full justify-start px-4 py-6 text-slate-600 dark:text-slate-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 text-base font-medium"
+              className="w-full justify-start px-4 py-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10 text-base font-medium"
             >
               <LogOut size={20} className="mr-3" />
               Logout
@@ -155,13 +153,13 @@ const Navbar: React.FC = () => {
           ) : (
             <div className="flex flex-col gap-2">
               <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start px-4 py-3 text-slate-600 dark:text-slate-300 text-base font-medium">
+                <Button variant="ghost" className="w-full justify-start px-4 py-3 text-muted-foreground text-base font-medium">
                   <LogIn size={20} className="mr-3" />
                   Log In
                 </Button>
               </Link>
               <Link to="/signup" onClick={() => setIsMenuOpen(false)}>
-                <Button className="w-full justify-start px-4 py-3 bg-teal-600 hover:bg-teal-700 text-white text-base font-medium">
+                <Button className="w-full justify-start px-4 py-3 bg-primary hover:bg-primary/90 text-primary-foreground text-base font-medium">
                   <UserPlus size={20} className="mr-3" />
                   Sign Up
                 </Button>

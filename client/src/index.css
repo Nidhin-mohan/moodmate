@@ -2,110 +2,103 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ... */
-
 @layer base {
   :root {
+    /* ── Page canvas ── */
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
 
-    --background: 0 0% 100%;
-
-    --foreground: 240 10% 3.9%;
-
+    /* ── Card / elevated surface ── */
     --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    --card-foreground: 240 10% 3.9%;
-
+    /* ── Popover ── */
     --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --popover-foreground: 240 10% 3.9%;
+    /* ── Brand: teal ── */
+    --primary: 174 60% 35%;
+    --primary-foreground: 0 0% 100%;
 
-    --primary: 240 5.9% 10%;
+    /* ── Secondary surfaces ── */
+    --secondary: 210 20% 94%;
+    --secondary-foreground: 222 47% 11%;
 
-    --primary-foreground: 0 0% 98%;
+    /* ── Muted: input fills, subtle chips, section insets ── */
+    --muted: 210 20% 94%;
+    --muted-foreground: 215 16% 47%;
 
-    --secondary: 240 4.8% 95.9%;
+    /* ── Accent: light teal tint for active/highlighted states ── */
+    --accent: 174 60% 95%;
+    --accent-foreground: 174 60% 28%;
 
-    --secondary-foreground: 240 5.9% 10%;
-
-    --muted: 240 4.8% 95.9%;
-
-    --muted-foreground: 240 3.8% 46.1%;
-
-    --accent: 240 4.8% 95.9%;
-
-    --accent-foreground: 240 5.9% 10%;
-
-    --destructive: 0 84.2% 60.2%;
-
+    /* ── Destructive ── */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 5.9% 90%;
+    /* ── Borders & inputs ── */
+    --border: 215 20% 89%;
+    --input: 215 20% 89%;
 
-    --input: 240 5.9% 90%;
+    /* ── Focus ring ── */
+    --ring: 174 60% 35%;
 
-    --ring: 240 10% 3.9%;
+    /* ── Charts (semantic mood/metric colors, not brand) ── */
+    --chart-1: 142 55% 45%;  /* green  — Happy    */
+    --chart-2: 45 90% 55%;   /* yellow — Excited  */
+    --chart-3: 215 16% 60%;  /* slate  — Neutral  */
+    --chart-4: 213 70% 55%;  /* blue   — Sad      */
+    --chart-5: 270 55% 60%;  /* purple — Anxious  */
 
-    --chart-1: 12 76% 61%;
-
-    --chart-2: 173 58% 39%;
-
-    --chart-3: 197 37% 24%;
-
-    --chart-4: 43 74% 66%;
-
-    --chart-5: 27 87% 67%;
-
-    --radius: 0.5rem
+    --radius: 0.5rem;
   }
+
   .dark {
+    /* ── Page canvas: rich dark navy, not pitch black ── */
+    --background: 222 22% 8%;
+    --foreground: 210 20% 94%;
 
-    --background: 240 10% 3.9%;
+    /* ── Card: one step lighter than bg for visible depth ── */
+    --card: 222 22% 12%;
+    --card-foreground: 210 20% 94%;
 
-    --foreground: 0 0% 98%;
+    /* ── Popover ── */
+    --popover: 222 22% 12%;
+    --popover-foreground: 210 20% 94%;
 
-    --card: 240 10% 3.9%;
+    /* ── Brand: slightly brighter teal so it reads against dark bg ── */
+    --primary: 174 55% 46%;
+    --primary-foreground: 222 22% 8%;
 
-    --card-foreground: 0 0% 98%;
+    /* ── Secondary surfaces ── */
+    --secondary: 222 22% 17%;
+    --secondary-foreground: 210 20% 94%;
 
-    --popover: 240 10% 3.9%;
+    /* ── Muted: two steps above bg — inputs, chips, section insets ── */
+    --muted: 222 22% 17%;
+    --muted-foreground: 215 16% 58%;
 
-    --popover-foreground: 0 0% 98%;
+    /* ── Accent: dark teal tint ── */
+    --accent: 174 55% 12%;
+    --accent-foreground: 174 55% 60%;
 
-    --primary: 0 0% 98%;
-
-    --primary-foreground: 240 5.9% 10%;
-
-    --secondary: 240 3.7% 15.9%;
-
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 240 3.7% 15.9%;
-
-    --muted-foreground: 240 5% 64.9%;
-
-    --accent: 240 3.7% 15.9%;
-
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-
+    /* ── Destructive ── */
+    --destructive: 0 62% 38%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 3.7% 15.9%;
+    /* ── Borders & inputs ── */
+    --border: 222 22% 20%;
+    --input: 222 22% 20%;
 
-    --input: 240 3.7% 15.9%;
+    /* ── Focus ring ── */
+    --ring: 174 55% 46%;
 
-    --ring: 240 4.9% 83.9%;
-
-    --chart-1: 220 70% 50%;
-
-    --chart-2: 160 60% 45%;
-
-    --chart-3: 30 80% 55%;
-
-    --chart-4: 280 65% 60%;
-
-    --chart-5: 340 75% 55%
+    /* ── Charts ── */
+    --chart-1: 142 50% 50%;
+    --chart-2: 45 85% 60%;
+    --chart-3: 215 16% 65%;
+    --chart-4: 213 65% 60%;
+    --chart-5: 270 50% 65%;
   }
 }
 
