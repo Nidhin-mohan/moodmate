@@ -6,3 +6,4 @@ process.env.MONGO_URI = 'mongodb://localhost:27017/test';
 process.env.JWT_SECRET = 'test-secret-key-at-least-16-chars';
 process.env.NODE_ENV = 'test';
 process.env.CORS_ORIGINS = 'http://localhost:5173';
+process.env.GEMINI_API_KEY = 'test-gemini-api-key';
