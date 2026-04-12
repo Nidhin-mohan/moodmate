@@ -4,11 +4,13 @@ import app from './app';
 import { connectDB } from './config/db';
 import mongoose from 'mongoose';
 import { logger } from './utils/logger';
+import { scheduleAllJobs } from './jobs';
 
 const PORT = env.PORT;
 
 const start = async () => {
   await connectDB();
+  scheduleAllJobs();
 
   const server = app.listen(PORT, () => {
     logger.info(`Server running on http://localhost:${PORT}`);

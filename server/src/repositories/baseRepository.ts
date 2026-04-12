@@ -1,5 +1,5 @@
-import { Model, Document, FilterQuery } from "mongoose";
-import { QueryOptions, PaginatedResult } from "./types";
+import { Model, Document, FilterQuery } from 'mongoose';
+import { QueryOptions, PaginatedResult } from './types';
 
 // ─── THE BASE ────────────────────────────────────────────────────
 // Every collection repository extends this. You write CRUD once
@@ -19,28 +19,24 @@ export class BaseRepository<TDocument extends Document> {
   // Filter + sort + pagination + select + total count in one call.
   // Services never hand-roll this — they just pass QueryOptions.
   async findAll<TFilter = Record<string, unknown>>(
-    options: QueryOptions<TFilter> = {}
+    options: QueryOptions<TFilter> = {},
   ): Promise<PaginatedResult<TDocument>> {
     const {
       filter = {},
       select,
-      sort = { field: "createdAt", order: "desc" },
+      sort = { field: 'createdAt', order: 'desc' },
       pagination = { skip: 0, limit: 20 },
     } = options;
 
     const mongoFilter = filter as FilterQuery<TDocument>;
     const mongoSort = {
-      [sort.field]: sort.order === "asc" ? 1 : -1,
+      [sort.field]: sort.order === 'asc' ? 1 : -1,
     } as Record<string, 1 | -1>;
     const { skip, limit } = pagination;
 
-    const query = this.model
-      .find(mongoFilter)
-      .sort(mongoSort)
-      .skip(skip)
-      .limit(limit);
+    const query = this.model.find(mongoFilter).sort(mongoSort).skip(skip).limit(limit);
 
-    if (select) query.select(select.join(" "));
+    if (select) query.select(select.join(' '));
 
     const [data, total] = await Promise.all([
       query.exec(),
@@ -55,9 +51,7 @@ export class BaseRepository<TDocument extends Document> {
     return this.model.findById(id).exec();
   }
 
-  async findOne(
-    filter: FilterQuery<TDocument>
-  ): Promise<TDocument | null> {
+  async findOne(filter: FilterQuery<TDocument>): Promise<TDocument | null> {
     return this.model.findOne(filter).exec();
   }
 
@@ -66,10 +60,7 @@ export class BaseRepository<TDocument extends Document> {
     return this.model.create(data) as Promise<TDocument>;
   }
 
-  async updateById(
-    id: string,
-    data: Partial<TDocument>
-  ): Promise<TDocument | null> {
+  async updateById(id: string, data: Partial<TDocument>): Promise<TDocument | null> {
     return this.model
       .findByIdAndUpdate(id, { $set: data }, { new: true, runValidators: true })
       .exec();
@@ -82,10 +73,7 @@ export class BaseRepository<TDocument extends Document> {
 
   // ── Utility ─────────────────────────────────────────────────
   async exists(filter: FilterQuery<TDocument>): Promise<boolean> {
-    const count = await this.model
-      .countDocuments(filter)
-      .limit(1)
-      .exec();
+    const count = await this.model.countDocuments(filter).limit(1).exec();
     return count > 0;
   }
 }

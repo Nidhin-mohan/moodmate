@@ -31,7 +31,7 @@ export const authentication = async (
 
     req.user = user as IUser;
     next();
-  } catch (error) {
+  } catch (_error) {
     next(new UnauthorizedError('Not authorized, token failed'));
   }
 };

@@ -62,17 +62,25 @@ export const getMoodStats = async (days?: number): Promise<MoodStatsResponse> =>
 
 
 // Types
+export type SocialQuality = 'isolated' | 'neutral' | 'connected';
+export type MoodTriggerCategory = 'work' | 'relationships' | 'health' | 'finances' | 'environment' | 'random';
+
 export interface MoodLogData {
   mood: string;
   specificEmotion?: string;
   intensity: number;
   energyLevel: number;
+  stressLevel?: number;
+  anxietyLevel?: number;
   tagsPeople?: string[];
   tagsPlaces?: string[];
   tagsEvents?: string[];
+  socialQuality?: SocialQuality;
+  moodTriggerCategory?: MoodTriggerCategory;
   sleepHours: number;
   sleepQuality: number;
   exercise?: boolean;
+  exerciseMinutes?: number;
   notes?: string;
   reflections?: string;
   date?: string;

@@ -1,5 +1,5 @@
-import supertest from "supertest";
-import app from "../app";
+import supertest from 'supertest';
+import app from '../app';
 
 export const request = supertest(app);
 
@@ -7,15 +7,13 @@ export const request = supertest(app);
 // Used by mood tests that need an authenticated user.
 export const createAuthenticatedUser = async (overrides = {}) => {
   const userData = {
-    name: "Test User",
+    name: 'Test User',
     email: `test-${Date.now()}@example.com`,
-    password: "password123",
+    password: 'password123',
     ...overrides,
   };
 
-  const res = await request
-    .post("/api/v1/auth/register")
-    .send(userData);
+  const res = await request.post('/api/v1/auth/register').send(userData);
 
   return {
     token: res.body.data.token as string,
@@ -26,15 +24,15 @@ export const createAuthenticatedUser = async (overrides = {}) => {
 
 // Valid mood log payload for creating mood logs in tests.
 export const validMoodLog = {
-  mood: "happy",
-  specificEmotion: "joyful",
+  mood: 'happy',
+  specificEmotion: 'joyful',
   intensity: 7,
   energyLevel: 8,
-  tagsPeople: ["family"],
-  tagsPlaces: ["home"],
-  tagsEvents: ["dinner"],
+  tagsPeople: ['family'],
+  tagsPlaces: ['home'],
+  tagsEvents: ['dinner'],
   sleepHours: 7.5,
   sleepQuality: 4,
   exercise: true,
-  notes: "Great day",
+  notes: 'Great day',
 };

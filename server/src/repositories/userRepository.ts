@@ -1,11 +1,12 @@
-import { BaseRepository } from "./baseRepository";
-import User, { IUser } from "../models/userModel";
+import { BaseRepository } from './baseRepository';
+import User, { IUser } from '../models/userModel';
 
 // ─── User-specific filter shape ──────────────────────────────────
 export interface UserFilter {
   email?: string;
   role?: string;
   name?: RegExp;
+  isPro?: boolean;
 }
 
 // ─── USER REPOSITORY ─────────────────────────────────────────────
@@ -20,12 +21,12 @@ class UserRepository extends BaseRepository<IUser> {
 
   // ── User-specific queries ──────────────────────────────────
   async findByEmail(email: string): Promise<IUser | null> {
-    return this.findOne({ email } as any);
+    return this.findOne({ email } as Parameters<typeof this.findOne>[0]);
   }
 
   // Returns user without password hash — for auth middleware and profile
   async findByIdSecure(id: string): Promise<IUser | null> {
-    return this.model.findById(id).select("-password").exec();
+    return this.model.findById(id).select('-password').exec();
   }
 }
 

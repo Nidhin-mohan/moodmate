@@ -7,16 +7,13 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <div
-      className="min-h-screen flex flex-col bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100"
-    >
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <main className="flex-1 p-4 bg-white/80 rounded-lg shadow-lg backdrop-blur-lg">
+      <main className="flex-1">
         {children}
       </main>
     </div>
   );
 };
-;
 
 export default Layout;
