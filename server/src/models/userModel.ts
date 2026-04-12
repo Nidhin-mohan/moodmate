@@ -15,6 +15,9 @@ export interface IUser extends Document {
   password: string;
   role: UserRole;
   isPro: boolean;
+  proSince: Date | null;
+  isDeleted: boolean;
+  deletedAt: Date | null;
   matchPassword(enteredPassword: string): Promise<boolean>;
 }
 
@@ -29,6 +32,9 @@ const userSchema: Schema = new Schema(
       default: UserRole.USER,
     },
     isPro: { type: Boolean, default: false },
+    proSince: { type: Date, default: null },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

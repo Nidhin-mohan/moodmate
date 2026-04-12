@@ -15,29 +15,28 @@ const PageLoader = () => (
 );
 
 export function AppRouter() {
-  const { isLoggedIn } = useAuth();
-  const userRole = isLoggedIn ? "user" : "public";
+  const { isLoggedIn, user } = useAuth();
+  // Use the actual stored role so admin/therapist routes resolve correctly.
+  // Falls back to "user" for logged-in sessions that predate the role field.
+  const userRole = isLoggedIn ? (user?.role ?? "user") : "public";
 
   const buildRoutes = (config: RouteConfig[]): RouteObject[] =>
     config.map((r) => {
       const PageComponent = componentMap[r.component];
       const LayoutComponent = r.layout ? componentMap[r.layout] : null;
 
-      // PAGE ELEMENT
       const page = (
         <Suspense fallback={<PageLoader />}>
           <PageComponent />
         </Suspense>
       );
 
-      // PROTECTED WRAPPER
       const protectedPage = r.roles.includes("public") ? (
         page
       ) : (
         <ProtectedRoute>{page}</ProtectedRoute>
       );
 
-      // LAYOUT WRAPPER
       const element = LayoutComponent ? (
         <Suspense fallback={<PageLoader />}>
           <LayoutComponent>{protectedPage}</LayoutComponent>

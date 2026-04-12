@@ -25,6 +25,8 @@ export const registerUserService = async (
     userId: user._id.toString(),
     name: user.name,
     email: user.email,
+    role: user.role,
+    isPro: user.isPro,
     token,
   };
 };
@@ -40,6 +42,8 @@ export const loginUserService = async (email: string, password: string): Promise
     userId: user._id.toString(),
     name: user.name,
     email: user.email,
+    role: user.role,
+    isPro: user.isPro,
     token,
   };
 };
@@ -54,6 +58,8 @@ export const getUserProfileService = async (userId: string): Promise<UserData> =
     userId: user._id.toString(),
     name: user.name,
     email: user.email,
+    role: user.role,
+    isPro: user.isPro,
   };
 };
 
@@ -61,5 +67,7 @@ interface UserData {
   userId: string;
   name: string;
   email: string;
+  role: string;
+  isPro: boolean;
   token?: string;
 }

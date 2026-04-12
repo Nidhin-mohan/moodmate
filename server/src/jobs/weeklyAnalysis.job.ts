@@ -53,9 +53,9 @@ async function run(): Promise<void> {
 }
 
 export function scheduleWeeklyAnalysisJob(): void {
-  cron.schedule(CRON_SCHEDULES.EVERY_MINUTE, () => {
+  cron.schedule(CRON_SCHEDULES.EVERY_SUNDAY_3AM, () => {
     run().catch((err) => logger.error({ job: JOB_NAME, err }, 'Unhandled job error'));
   });
 
-  logger.info({ job: JOB_NAME, schedule: CRON_SCHEDULES.EVERY_MINUTE }, 'Cron job registered');
+  logger.info({ job: JOB_NAME, schedule: CRON_SCHEDULES.EVERY_SUNDAY_3AM }, 'Cron job registered');
 }

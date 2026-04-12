@@ -16,7 +16,7 @@
     "format:check": "prettier --check \"src/**/*.ts\"",
     "lint": "eslint \"src/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" --fix",
-    "seed": "tsx src/seeds/moodSeed.ts"
+    "seed": "tsx src/seeds/index.ts"
   },
   "lint-staged": {
     "src/**/*.ts": [

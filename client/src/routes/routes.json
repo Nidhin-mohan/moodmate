@@ -45,9 +45,9 @@
     "layout": "MainLayout"
   },
   {
-    "path": "/tools",
-    "component": "Tools",
-    "roles": ["user"],
+    "path": "/admin/users",
+    "component": "AdminUsers",
+    "roles": ["admin"],
     "layout": "MainLayout"
   }
 ]

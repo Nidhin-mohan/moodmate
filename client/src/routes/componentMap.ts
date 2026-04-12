@@ -1,7 +1,7 @@
 import React, { lazy } from "react";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const componentMap: Record<string, React.LazyExoticComponent<React.ComponentType<any>>>  = {
+export const componentMap: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
   Home: lazy(() => import("../pages/Home")),
   Login: lazy(() => import("../pages/auth/Login")),
   SignUp: lazy(() => import("../pages/auth/SignUp")),
@@ -10,6 +10,7 @@ export const componentMap: Record<string, React.LazyExoticComponent<React.Compon
   MoodHistory: lazy(() => import("../pages/moodTracking/MoodHistory")),
   UserProfile: lazy(() => import("../pages/profile/UserProfile")),
   Tools: lazy(() => import("../pages/tools/Tools")),
+  AdminUsers: lazy(() => import("../pages/admin/AdminUsers")),
   MainLayout: lazy(() => import("../components/layout/Layout")),
-  Unauthorized: lazy(() => import("../pages/Unauthorized"))
+  Unauthorized: lazy(() => import("../pages/Unauthorized")),
 };

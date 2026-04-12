@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut, LayoutDashboard, Smile, User, History, Sparkles, LogIn, UserPlus, Sun, Moon } from "lucide-react";
+import { Menu, X, LogOut, LayoutDashboard, Smile, User, History, Sparkles, LogIn, UserPlus, Sun, Moon, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { logout, isLoggedIn } = useAuth();
+  const { logout, isLoggedIn, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,6 +25,9 @@ const Navbar: React.FC = () => {
     { name: "History", path: "/mood-history", icon: History },
     { name: "Tools", path: "/tools", icon: Sparkles },
     { name: "Profile", path: "/profile", icon: User },
+    ...(user?.role === "admin"
+      ? [{ name: "Admin", path: "/admin/users", icon: ShieldCheck }]
+      : []),
   ];
 
   const publicNavLinks = [

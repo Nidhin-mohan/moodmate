@@ -1,8 +1,5 @@
 import mongoose from 'mongoose';
 import MoodLog from '../models/moodLogModel';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 // Seed data configuration
 const moods = ['happy', 'sad', 'anxious', 'calm', 'angry', 'excited', 'tired', 'neutral'];
@@ -86,55 +83,27 @@ const generateMoodLog = (userId: string, date: Date) => {
   };
 };
 
-// Main seed function
 export const seedMoodLogs = async (
   userId: string,
   days: number = 60,
   logsPerDay: { min: number; max: number } = { min: 1, max: 3 },
 ): Promise<void> => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI as string);
-    console.log('Connected to MongoDB');
+  const logs = [];
+  const now = new Date();
 
-    // Optional: Clear existing logs for this user
-    // await MoodLog.deleteMany({ user: userId });
-    // console.log("Cleared existing mood logs");
+  for (let i = 0; i < days; i++) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
 
-    const logs = [];
-    const now = new Date();
+    const logsForDay = randomInt(logsPerDay.min, logsPerDay.max);
 
-    for (let i = 0; i < days; i++) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-
-      const logsForDay = randomInt(logsPerDay.min, logsPerDay.max);
-
-      for (let j = 0; j < logsForDay; j++) {
-        // Randomize time of day
-        const logDate = new Date(date);
-        logDate.setHours(randomInt(6, 23), randomInt(0, 59), 0, 0);
-
-        logs.push(generateMoodLog(userId, logDate));
-      }
+    for (let j = 0; j < logsForDay; j++) {
+      const logDate = new Date(date);
+      logDate.setHours(randomInt(6, 23), randomInt(0, 59), 0, 0);
+      logs.push(generateMoodLog(userId, logDate));
     }
-
-    const result = await MoodLog.insertMany(logs);
-    console.log(`Seeded ${result.length} mood logs for user ${userId}`);
-
-    await mongoose.disconnect();
-    console.log('Disconnected from MongoDB');
-  } catch (error) {
-    console.error('Seed error:', error);
-    process.exit(1);
   }
+
+  const result = await MoodLog.insertMany(logs);
+  console.log(`Seeded ${result.length} mood logs for user ${userId}`);
 };
-
-// Run directly: npx ts-node seeds/moodSeed.ts <userId>
-const userId = process.argv[2];
-
-if (!userId) {
-  console.error('Usage: npx ts-node seeds/moodSeed.ts <userId>');
-  process.exit(1);
-}
-
-seedMoodLogs(userId, 60, { min: 1, max: 2 });
