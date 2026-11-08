@@ -2,6 +2,23 @@ import { request, createAuthenticatedUser, createAdminUser } from './helpers';
 
 const asAdmin = (token: string) => ({ Authorization: `Bearer ${token}` });
 
+describe('Admin access control', () => {
+  it('answers a logged-in non-admin with 403, not 401', async () => {
+    const user = await createAuthenticatedUser();
+
+    const res = await request.get('/api/v1/admin/users').set(asAdmin(user.token));
+
+    expect(res.status).toBe(403);
+    expect(res.body.errorCode).toBe('FORBIDDEN');
+  });
+
+  it('still answers a missing token with 401', async () => {
+    const res = await request.get('/api/v1/admin/users');
+
+    expect(res.status).toBe(401);
+  });
+});
+
 describe('Admin self-protection', () => {
   it('rejects an admin changing their own role', async () => {
     const admin = await createAdminUser();

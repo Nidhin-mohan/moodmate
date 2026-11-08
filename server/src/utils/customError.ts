@@ -31,6 +31,14 @@ export class UnauthorizedError extends CustomError {
   }
 }
 
+// 403 — authenticated, but not allowed to do this (e.g. a non-admin on an admin route).
+// Distinct from 401 so the client doesn't treat it as an expired session and log out.
+export class ForbiddenError extends CustomError {
+  constructor(message = 'Access is forbidden') {
+    super(message, 403, 'FORBIDDEN');
+  }
+}
+
 // 404 — resource doesn't exist
 // Takes the resource name and ID so the message is consistent everywhere:
 // "Mood log not found: 507f1f77bcf86cd799439011"
