@@ -22,8 +22,8 @@ export const listUsersQuerySchema = z.object({
       return undefined;
     }),
   // ISO date strings for proSince range
-  proSinceFrom: z.string().optional(),
-  proSinceTo: z.string().optional(),
+  proSinceFrom: z.coerce.date().optional(),
+  proSinceTo: z.coerce.date().optional(),
   includeDeleted: z
     .string()
     .optional()

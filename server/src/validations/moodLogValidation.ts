@@ -28,10 +28,34 @@ export const createMoodLogSchema = z.object({
   exerciseMinutes: z.number().int().min(0).optional(),
   notes: z.string().max(2000).optional(),
   reflections: z.string().max(2000).optional(),
-  date: z.coerce.date().optional(),
+  // A day of slack so "now" in the user's timezone is never rejected.
+  date: z.coerce
+    .date()
+    .refine((d) => d.getTime() <= Date.now() + 24 * 60 * 60 * 1000, {
+      message: 'Date cannot be in the future',
+    })
+    .optional(),
 });
 
 export const updateMoodLogSchema = createMoodLogSchema.partial();
 
 export type CreateMoodLogInput = z.infer<typeof createMoodLogSchema>;
 export type UpdateMoodLogInput = z.infer<typeof updateMoodLogSchema>;
+
+// ── Query strings ─────────────────────────────────────────────
+// Express hands over string | string[] | object; anything that isn't a plain
+// scalar (e.g. mood[$ne]=x) fails here instead of reaching MongoDB.
+
+export const listMoodsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
+  mood: z.string().min(1).optional(),
+});
+
+export const moodStatsQuerySchema = z.object({
+  days: z.coerce.number().int().min(1).max(365).default(30),
+});
+
+export type ListMoodsQuery = z.infer<typeof listMoodsQuerySchema>;

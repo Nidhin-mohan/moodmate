@@ -7,8 +7,8 @@ import type { CreateMoodLogInput, UpdateMoodLogInput } from '../validations/mood
 interface GetAllMoodsParams {
   page: number;
   limit: number;
-  startDate?: string;
-  endDate?: string;
+  startDate?: Date;
+  endDate?: Date;
   mood?: string;
 }
 
@@ -53,8 +53,8 @@ export const getAllMoodsService = async (
 
   if (startDate || endDate) {
     const dateFilter: { $gte?: Date; $lte?: Date } = {};
-    if (startDate) dateFilter.$gte = new Date(startDate);
-    if (endDate) dateFilter.$lte = new Date(endDate);
+    if (startDate) dateFilter.$gte = startDate;
+    if (endDate) dateFilter.$lte = endDate;
     filter.date = dateFilter;
   }
 
