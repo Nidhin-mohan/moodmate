@@ -13,7 +13,7 @@ npm test             # vitest run — jsdom + React Testing Library
 npm run test:watch   # vitest watch mode
 ```
 
-Tests live next to the code as `*.test.ts(x)`; setup in `src/test/setup.ts`. Mock the Axios instance with `vi.mock("@/api", …)`.
+Tests live next to the code as `*.test.ts(x)`; setup in `src/test/setup.ts` (jest-dom, a `ResizeObserver` stub for Radix, cleanup). Pages mock the service module (`vi.mock("@/services/…")`); services mock the Axios instance (`vi.mock("@/api", …)`). `restoreMocks: true` is on: give a mock's default behaviour as `vi.fn(impl)`, don't add `beforeEach(mockReset)`, and put fixtures used inside `vi.mock` factories in `vi.hoisted`.
 
 ## Architecture Notes
 
@@ -27,11 +27,11 @@ AuthProvider is intentionally outside BrowserRouter so auth state is available a
 
 ### Key Directories
 
-- `src/api/` — Axios instance with interceptors (attaches Bearer token from localStorage, auto-redirect on 401)
+- `src/api/` — Axios instance with interceptors (attaches Bearer token from localStorage; `onResponseError` redirects to `/login` on 401 except for credential calls, never on 403)
 - `src/context/` — `AuthContext.tsx`: React Context for auth state, token under `"token"` and user under `"user"` in localStorage
-- `src/auth/` — `ProtectedRoute.tsx` (redirects unauthenticated to `/login`), `access.ts` (role-based `canAccess()`)
+- `src/auth/` — `ProtectedRoute.tsx` (redirects unauthenticated to `/login`), `access.ts` (`canAccess()` role rules and `routeDecision()` → `allow` / `login` / `unauthorized`)
 - `src/routes/` — data-driven routing system (JSON config → lazy-loaded components)
-- `src/pages/` — page components (Home, Login, SignUp, Dashboard, MoodTrackingForm, MoodHistory, UserProfile, Unauthorized)
+- `src/pages/` — page components (Home, Login, SignUp, Dashboard, MoodTrackingForm, MoodHistory, UserProfile, Tools, AdminUsers, Unauthorized). Pages call `services/`, never `api` directly.
 - `src/components/layout/` — Layout shell (Navbar + Footer + content area)
 - `src/components/ui/` — shadcn/ui primitives (button, card, input, select, slider, switch, checkbox, textarea, toggle)
 - `src/services/` — API call wrappers (`authServices.ts`, `moodLogService.ts`)
@@ -44,12 +44,12 @@ AuthProvider is intentionally outside BrowserRouter so auth state is available a
 Routes are **data-driven**, not hard-coded JSX:
 1. `routes/routes.json` — declares path, component name, allowed roles, optional layout
 2. `routes/componentMap.ts` — maps component names to `React.lazy()` imports (all pages are code-split)
-3. `routes/AppRouter.tsx` — reads JSON config, resolves components, applies role checks via `canAccess()`, wraps protected routes in `<ProtectedRoute>`, optionally wraps in layout component
+3. `routes/AppRouter.tsx` — reads JSON config, resolves components, guards each route with `routeDecision()` (logged out on a protected route → `/login`; logged in without the role → `/unauthorized`), wraps protected routes in `<ProtectedRoute>`, optionally wraps in layout component
 4. `routes/routeTypes.ts` — TypeScript interfaces for route config
 
 To add a new route: add an entry to `routes.json` and register the lazy component in `componentMap.ts`.
 
-Currently two roles: `"public"` (unauthenticated) and `"user"` (logged in). The design supports adding roles like `"admin"` or `"therapist"` trivially.
+Roles: `"public"` (unauthenticated), `"user"`, `"therapist"` and `"admin"`. In `canAccess()`, `public` routes are open to everyone, and `therapist` and `admin` both inherit every `user` route; `admin` routes are admin-only.
 
 **Route table** (from `routes/routes.json`):
 
@@ -62,13 +62,16 @@ Currently two roles: `"public"` (unauthenticated) and `"user"` (logged in). The 
 | `/mood-tracking` | MoodTrackingForm | user | MainLayout |
 | `/mood-history` | MoodHistory | user | MainLayout |
 | `/profile` | UserProfile | user | MainLayout |
+| `/tools` | Tools | public, user | MainLayout |
+| `/admin/users` | AdminUsers | admin | MainLayout |
 
 ### Auth Flow
 
 - `AuthContext` initializes state synchronously from localStorage — no async fetch, no loading flash
 - `isLoggedIn` is derived from `!!token`
 - Axios request interceptor reads token from localStorage (not React state) on every request to avoid stale closure issues
-- Axios 401 interceptor does a hard `window.location.href = "/login"` redirect — this guarantees a clean slate on session expiry but loses in-memory state
+- Axios response handler `onResponseError`: on a 401 it clears `token` and `user` and hard-redirects with `window.location.assign("/login")` — a clean slate on session expiry, at the cost of in-memory state. It skips `/auth/login` and `/auth/register` (a 401 there means bad credentials; Login shows the server's message inline). A 403 (e.g. non-admin on an admin endpoint) never logs the user out.
+- Login calls `login()` from `services/authServices.ts`, which turns API errors into plain `Error`s with the server's message
 - `<ProtectedRoute>` renders children if `isLoggedIn`, otherwise redirects to `/login`
 
 ### UI / Styling
@@ -124,7 +127,7 @@ The GitHub Actions CD pipeline (`cd-frontend.yml`):
 
 - **Data-driven routing vs JSX routes**: Adds two-file overhead per route (routes.json + componentMap.ts) but centralizes route metadata (roles, layouts) and eliminates scattered auth checks across components.
 - **localStorage auth vs httpOnly cookies**: Simpler to implement and works across subdomains. Vulnerable to XSS. `withCredentials: true` on Axios is set defensively for a potential future migration to cookie-based auth.
-- **Hard redirect on 401 vs React navigation**: Axios interceptors can't access React context or hooks. `window.location.href = "/login"` forces a full page reload, losing in-memory state, but guarantees a clean application state on session expiry.
+- **Hard redirect on 401 vs React navigation**: Axios interceptors can't access React context or hooks. `window.location.assign("/login")` forces a full page reload, losing in-memory state, but guarantees a clean application state on session expiry. Credential endpoints are excluded so a wrong password doesn't reload the login form.
 - **`componentMap` typed as `any`**: TypeScript can't narrow `componentMap[stringKey]` to a valid React component type. The `as any` cast is the pragmatic escape hatch for the data-driven routing pattern.
 - **No edit/delete in mood UI**: Immutable mood logs preserve full history for pattern analysis and prevent retroactive data manipulation. Users log again if their mood changes. The server has full CRUD — the UI restriction is intentional.
 - **API fallback to `"/api/v1"`**: When `VITE_API_BASE_URL` is not set, the client uses relative `/api/v1` paths. In Docker this works because nginx proxies `/api/` to the backend. In local dev it would fail — so the env var must be set for `npm run dev`.
