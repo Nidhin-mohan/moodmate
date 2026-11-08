@@ -1,10 +1,13 @@
+import { Link, useNavigate } from "react-router-dom";
+import { Moon, Sun } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
-import { User, Mail, Shield, Calendar, LogOut, Edit3 } from "lucide-react";
+import { useTheme } from "@/context/ThemeContext";
+
+const ROLE_LABEL: Record<string, string> = { user: "Member", admin: "Admin", therapist: "Therapist" };
 
 export default function UserProfile() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -12,128 +15,73 @@ export default function UserProfile() {
     navigate("/login");
   };
 
-  const getInitials = (name: string) => {
-    if (!name) return "U";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .substring(0, 2);
-  };
-
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground text-sm">Loading profile…</p>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <p className="text-sm text-muted-foreground">Loading your profile…</p>
       </div>
     );
   }
 
+  const initial = user.name?.trim()?.[0]?.toUpperCase() ?? "?";
+  const row = "flex min-h-[56px] items-center justify-between gap-4 px-5 py-3";
+
   return (
-    <div className="min-h-screen bg-background py-12 px-4 sm:px-6">
-      <div className="max-w-3xl mx-auto space-y-6">
-
-        {/* Page Header */}
-        <h1 className="text-2xl font-bold text-foreground">My Profile</h1>
-
-        {/* Main Profile Card */}
-        <div className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden">
-
-          {/* Banner */}
-          <div className="h-28 bg-gradient-to-r from-primary to-primary/60" />
-
-          <div className="px-8 pb-8">
-            {/* Avatar Section */}
-            <div className="relative -mt-12 mb-6 flex items-end justify-between">
-              <div className="flex items-center gap-5">
-                <div className="h-24 w-24 rounded-full bg-card p-1 shadow-md border border-border">
-                  <div className="h-full w-full rounded-full bg-muted flex items-center justify-center text-foreground font-bold text-2xl">
-                    {getInitials(user.name)}
-                  </div>
-                </div>
-                <div className="mb-2 hidden sm:block">
-                  <h2 className="text-xl font-bold text-foreground">{user.name}</h2>
-                  <p className="text-muted-foreground text-sm capitalize">{user.role || "Member"}</p>
-                </div>
-              </div>
-
-              <Button
-                variant="outline"
-                className="gap-2 border-border text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <Edit3 size={15} /> Edit Profile
-              </Button>
-            </div>
-
-            {/* Mobile Name */}
-            <div className="sm:hidden mb-6">
-              <h2 className="text-xl font-bold text-foreground">{user.name}</h2>
-              <p className="text-muted-foreground text-sm capitalize">{user.role || "Member"}</p>
-            </div>
-
-            {/* Details Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-              <div className="p-4 rounded-xl bg-muted border border-border flex items-start gap-3">
-                <div className="p-2 bg-card rounded-lg text-primary shadow-sm shrink-0">
-                  <Mail size={18} />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Email Address</p>
-                  <p className="text-foreground font-medium text-sm mt-0.5">{user.email}</p>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-muted border border-border flex items-start gap-3">
-                <div className="p-2 bg-card rounded-lg text-purple-600 shadow-sm shrink-0">
-                  <Shield size={18} />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Account Role</p>
-                  <p className="text-foreground font-medium text-sm mt-0.5 capitalize">{user.role || "User"}</p>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-muted border border-border flex items-start gap-3">
-                <div className="p-2 bg-card rounded-lg text-orange-500 shadow-sm shrink-0">
-                  <Calendar size={18} />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Joined Date</p>
-                  <p className="text-foreground font-medium text-sm mt-0.5">December 2025</p>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-muted border border-border flex items-start gap-3">
-                <div className="p-2 bg-card rounded-lg text-muted-foreground shadow-sm shrink-0">
-                  <User size={18} />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">User ID</p>
-                  <p className="text-foreground font-mono text-xs mt-1 break-all">
-                    {user?._id || "N/A"}
-                  </p>
-                </div>
-              </div>
-
-            </div>
-          </div>
+    <div className="mx-auto max-w-[720px] px-4 pb-24 pt-6 sm:px-8 sm:pt-10">
+      <div className="flex items-center gap-4">
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-soft font-serif text-2xl text-soft-foreground">
+          {initial}
+        </span>
+        <div>
+          <h1 className="font-serif text-[28px] font-medium leading-tight text-foreground">{user.name}</h1>
+          <p className="text-muted-foreground">{ROLE_LABEL[user.role ?? "user"] ?? "Member"}</p>
         </div>
-
-        {/* Logout */}
-        <div className="flex justify-end">
-          <Button
-            onClick={handleLogout}
-            variant="ghost"
-            className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
-          >
-            <LogOut size={17} />
-            Sign Out
-          </Button>
-        </div>
-
       </div>
+
+      <section className="mt-8" aria-labelledby="account-heading">
+        <h2 id="account-heading" className="mb-2 text-[13px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+          Account
+        </h2>
+        <dl className="divide-y divide-border rounded-3xl border border-border bg-card">
+          <div className={row}>
+            <dt className="text-muted-foreground">Email</dt>
+            <dd className="truncate text-foreground">{user.email}</dd>
+          </div>
+          <div className={row}>
+            <dt className="text-muted-foreground">Name</dt>
+            <dd className="text-foreground">{user.name}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section className="mt-8" aria-labelledby="prefs-heading">
+        <h2 id="prefs-heading" className="mb-2 text-[13px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+          Preferences
+        </h2>
+        <div className="divide-y divide-border rounded-3xl border border-border bg-card">
+          <button type="button" onClick={toggleTheme} className={`${row} w-full text-left`}>
+            <span className="text-foreground">Theme</span>
+            <span className="flex items-center gap-2 text-muted-foreground">
+              {theme === "dark" ? <Moon size={16} aria-hidden /> : <Sun size={16} aria-hidden />}
+              {theme === "dark" ? "Dark" : "Light"}
+            </span>
+          </button>
+          <Link to="/tools#support" className={row}>
+            <span className="text-foreground">Need support?</span>
+            <span className="text-muted-foreground" aria-hidden>
+              →
+            </span>
+          </Link>
+        </div>
+      </section>
+
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="mt-10 h-12 w-full rounded-full border border-border text-foreground hover:bg-accent sm:w-auto sm:px-8"
+      >
+        Log out
+      </button>
     </div>
   );
 }
