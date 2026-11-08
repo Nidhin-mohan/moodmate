@@ -2,3 +2,7 @@ node_modules/
 .env
 client/.env
 server/.env
+.claude/*.local.md
+.claude/settings.local.json
+.scratch/
+.playwright-mcp/
