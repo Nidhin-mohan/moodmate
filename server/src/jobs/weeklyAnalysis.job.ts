@@ -8,7 +8,8 @@ import { weeklyAnalysisTemplate } from '../templates/email/weeklyAnalysis';
 
 const JOB_NAME = 'weekly-mood-analysis';
 
-async function run(): Promise<void> {
+// Exported for tests; production runs it on the cron schedule below.
+export async function runWeeklyAnalysisJob(): Promise<void> {
   const jobLogger = logger.child({ job: JOB_NAME });
   jobLogger.info('Job started');
 
@@ -50,7 +51,9 @@ async function run(): Promise<void> {
 
 export function scheduleWeeklyAnalysisJob(): void {
   cron.schedule(CRON_SCHEDULES.EVERY_SUNDAY_3AM, () => {
-    run().catch((err) => logger.error({ job: JOB_NAME, err }, 'Unhandled job error'));
+    runWeeklyAnalysisJob().catch((err) =>
+      logger.error({ job: JOB_NAME, err }, 'Unhandled job error'),
+    );
   });
 
   logger.info({ job: JOB_NAME, schedule: CRON_SCHEDULES.EVERY_SUNDAY_3AM }, 'Cron job registered');

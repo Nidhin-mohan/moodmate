@@ -2,15 +2,11 @@ import { IMoodLog } from '../models/moodLogModel';
 import { NotFoundError } from '../utils/customError';
 import { moodLogRepository, MoodLogFilter } from '../repositories/moodLogRepository';
 import type { QueryOptions } from '../repositories/types';
-import type { CreateMoodLogInput, UpdateMoodLogInput } from '../validations/moodLogValidation';
-
-interface GetAllMoodsParams {
-  page: number;
-  limit: number;
-  startDate?: Date;
-  endDate?: Date;
-  mood?: string;
-}
+import type {
+  CreateMoodLogInput,
+  UpdateMoodLogInput,
+  ListMoodsQuery,
+} from '../validations/moodLogValidation';
 
 interface PaginatedMoodResult {
   count: number;
@@ -43,7 +39,7 @@ export const createMoodService = async (
 
 export const getAllMoodsService = async (
   userId: string,
-  params: GetAllMoodsParams,
+  params: ListMoodsQuery,
 ): Promise<PaginatedMoodResult> => {
   const { page, limit, startDate, endDate, mood } = params;
   const skip = (page - 1) * limit;

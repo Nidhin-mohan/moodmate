@@ -1,3 +1,5 @@
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 const time = (d: Date) => d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
@@ -6,7 +8,7 @@ const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDat
 // The year is shown whenever it isn't the current one, so an odd date is never ambiguous.
 export function formatActivityDate(value: string | Date, now: Date = new Date()): string {
   const date = new Date(value);
-  const dayDiff = Math.round((startOfDay(now) - startOfDay(date)) / 86_400_000);
+  const dayDiff = Math.round((startOfDay(now) - startOfDay(date)) / MS_PER_DAY);
 
   if (dayDiff === 0) return `Today, ${time(date)}`;
   if (dayDiff === 1) return `Yesterday, ${time(date)}`;

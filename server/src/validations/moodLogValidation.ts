@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
 const socialQualityEnum = z.enum(['isolated', 'neutral', 'connected']);
 const moodTriggerCategoryEnum = z.enum([
   'work',
@@ -31,7 +33,7 @@ export const createMoodLogSchema = z.object({
   // A day of slack so "now" in the user's timezone is never rejected.
   date: z.coerce
     .date()
-    .refine((d) => d.getTime() <= Date.now() + 24 * 60 * 60 * 1000, {
+    .refine((d) => d.getTime() <= Date.now() + ONE_DAY_MS, {
       message: 'Date cannot be in the future',
     })
     .optional(),

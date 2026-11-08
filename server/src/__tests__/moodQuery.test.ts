@@ -3,23 +3,32 @@ import MoodLog from '../models/moodLogModel';
 
 const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 
+// The error handler turns ZodErrors into { errors: [{ field, message }] }.
+const expectFieldError = (
+  res: { status: number; body: { errors?: { field: string }[] } },
+  field: string,
+) => {
+  expect(res.status).toBe(400);
+  expect(res.body.errors?.map((e) => e.field)).toContain(field);
+};
+
 describe('GET /api/v1/mood query validation', () => {
   it.each([
-    ['page=-1'],
-    ['page=0'],
-    ['limit=0'],
-    ['limit=-5'],
-    ['limit=101'],
-    ['limit=1000000'],
-    ['startDate=garbage'],
-    ['endDate=garbage'],
-    ['mood[$ne]=x'],
-  ])('rejects %s with 400', async (qs) => {
+    ['page=-1', 'page'],
+    ['page=0', 'page'],
+    ['limit=0', 'limit'],
+    ['limit=-5', 'limit'],
+    ['limit=101', 'limit'],
+    ['limit=1000000', 'limit'],
+    ['startDate=garbage', 'startDate'],
+    ['endDate=garbage', 'endDate'],
+    ['mood[$ne]=x', 'mood'],
+  ])('rejects %s with a 400 naming the "%s" field', async (qs, field) => {
     const { token } = await createAuthenticatedUser();
 
     const res = await request.get(`/api/v1/mood?${qs}`).set(auth(token));
 
-    expect(res.status).toBe(400);
+    expectFieldError(res, field);
   });
 
   it('accepts valid page, limit, mood and ISO dates', async () => {
@@ -46,13 +55,13 @@ describe('GET /api/v1/mood query validation', () => {
 
 describe('GET /api/v1/mood/stats query validation', () => {
   it.each([['days=-5'], ['days=0'], ['days=366'], ['days=999999999'], ['days=abc']])(
-    'rejects %s with 400',
+    'rejects %s with a 400 naming the "days" field',
     async (qs) => {
       const { token } = await createAuthenticatedUser();
 
       const res = await request.get(`/api/v1/mood/stats?${qs}`).set(auth(token));
 
-      expect(res.status).toBe(400);
+      expectFieldError(res, 'days');
     },
   );
 
@@ -67,15 +76,16 @@ describe('GET /api/v1/mood/stats query validation', () => {
 });
 
 describe('Admin list query validation', () => {
-  it('rejects an invalid proSinceFrom date with 400', async () => {
-    const admin = await createAdminUser();
+  it.each([['proSinceFrom'], ['proSinceTo']])(
+    'rejects an invalid %s date with a 400 naming the field',
+    async (field) => {
+      const admin = await createAdminUser();
 
-    const res = await request
-      .get('/api/v1/admin/users?proSinceFrom=notadate')
-      .set(auth(admin.token));
+      const res = await request.get(`/api/v1/admin/users?${field}=notadate`).set(auth(admin.token));
 
-    expect(res.status).toBe(400);
-  });
+      expectFieldError(res, field);
+    },
+  );
 });
 
 describe('Future-dated mood logs', () => {
