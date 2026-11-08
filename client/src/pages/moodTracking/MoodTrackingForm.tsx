@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type FieldErrors } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -101,7 +101,11 @@ const moodSchema = z.object({
   sleepHours: z.number().min(0).max(24),
   sleepQuality: z.number().min(1).max(5),
   exercise: z.boolean(),
-  exerciseMinutes: z.number().min(0).optional(),
+  exerciseMinutes: z
+    .number({ invalid_type_error: "Exercise minutes must be a number" })
+    .int("Exercise minutes must be a whole number")
+    .min(0, "Exercise minutes can't be negative")
+    .optional(),
   notes: z.string().optional(),
   reflections: z.string().optional(),
 });
@@ -151,8 +155,16 @@ export default function MoodTrackingForm() {
     return value.split(",").map((s) => s.trim()).filter(Boolean);
   };
 
-  const onInvalid = () => {
-    showToast.error("Please select a mood before saving your check-in.");
+  // Report the field that actually failed, not always the mood.
+  const onInvalid = (formErrors: FieldErrors<MoodFormData>) => {
+    if (formErrors.mood) {
+      showToast.error("Please select a mood before saving your check-in.");
+      return;
+    }
+    const [field, error] = Object.entries(formErrors)[0] ?? [];
+    showToast.error(
+      error?.message ? String(error.message) : `Please check the "${field}" field.`
+    );
   };
 
   const onSubmit = async (data: MoodFormData) => {
@@ -456,7 +468,10 @@ export default function MoodTrackingForm() {
                   <Input
                     type="number"
                     placeholder="e.g. 30"
-                    {...register("exerciseMinutes", { valueAsNumber: true })}
+                    {...register("exerciseMinutes", {
+                      // Empty means "not provided", not NaN.
+                      setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
+                    })}
                     className="bg-card border-border"
                   />
                 </div>
