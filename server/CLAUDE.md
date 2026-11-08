@@ -95,7 +95,7 @@ Two rate limiters in `middlewares/rateLimiter.ts`:
 ### Models
 
 - **User**: `{ name, email, password, role }` — bcrypt pre-save hook (salt rounds 10, guarded by `isModified("password")` to prevent double-hashing), `matchPassword()` instance method. Three roles: `admin`, `user`, `therapist`.
-- **MoodLog**: `{ user, mood, specificEmotion, intensity (1-10), energyLevel (1-10), tagsPeople[], tagsPlaces[], tagsEvents[], sleepHours (0-24), sleepQuality (1-5), exercise, notes, reflections, aiAnalysis, date }` — compound index `{user:1, date:-1}` for performant per-user time-ordered queries. `aiAnalysis` field exists for future AI integration.
+- **MoodLog**: `{ user, mood, specificEmotion, intensity (1-10), energyLevel (1-10), stressLevel, anxietyLevel, tagsPeople[], tagsPlaces[], tagsEvents[], socialQuality, moodTriggerCategory, sleepHours (0-24), sleepQuality (1-5), exercise, exerciseMinutes, notes, reflections, aiAnalysis, date }` — compound index `{user:1, date:-1}` for performant per-user time-ordered queries. **Only `mood` is required**: a quick log stores just the mood, and every other field is present only if the user reported it (no defaults invented; `exercise` has no default so "not recorded" ≠ "didn't exercise"; tag arrays default to `[]`). Every reader must treat non-mood fields as possibly missing. `aiAnalysis` is never written today (the weekly AI analysis is emailed, not stored).
 
 ### Error Handling
 
@@ -128,7 +128,9 @@ To add a new collection (e.g., Message): create model, then `class MessageReposi
 1. Numeric averages: intensity, energy level, sleep hours, sleep quality, total count
 2. Mood breakdown: count per mood type (returns `Record<string, number>`)
 
-Both are scoped to user + configurable day window (default 30 days), bounded above by now so future-dated legacy logs don't count. The service (`getMoodStatsService`) calls the repository method and formats the result.
+Both are scoped to user + configurable day window (default 30 days), bounded above by now so future-dated legacy logs don't count. The service (`getMoodStatsService`) calls the repository method and formats the result: each average is a number rounded to one decimal, or `null` when no log in the window recorded that field (`$avg` skips missing fields) — never `0` for "no data".
+
+The weekly AI analysis uses `computeWeeklyStats()` (`services/weeklyStats.ts`), which applies the same rule; the prompt and the email template print only metrics that were recorded.
 
 ## Testing
 
@@ -229,7 +231,7 @@ The GitHub Actions CI pipeline (`ci.yml`) runs on push/PR to `main`:
 - **Zod validation in controllers vs middleware**: Validation happens inside controller functions rather than in dedicated middleware. This keeps validation close to the handler that uses the data and allows controller-specific validation logic, but means Zod parse calls are repeated in each controller.
 - **asyncHandler wrapping vs express-async-errors**: Manual wrapping with `asyncHandler` is more explicit and adds structured logging per handler (task name). The tradeoff is boilerplate — every controller must use it.
 - **User lookup on every authenticated request**: `authMiddleware` calls `userRepository.findByIdSecure()` on every request to verify the user still exists. This catches deleted users immediately but adds a DB round-trip per request. A cache or token-only approach would be faster but risks stale user state.
-- **No update/delete exposed in frontend**: The server has full CRUD, but the frontend only uses create and read. Immutable mood logs preserve the full history for pattern analysis. The endpoints exist for admin tooling or future features.
+- **No general edit/delete in the frontend**: The server has full CRUD. The frontend creates and reads logs, and uses `PUT` in exactly one place: the "Add details" flow straight after a quick log, which fills only fields that are still empty on the entry it just created. Nothing already saved is changed, so the history stays trustworthy for pattern analysis. This "fill blanks only" rule is enforced on the client; `PUT` itself accepts any field (and zod's partial schema injects no defaults, so omitted fields are never wiped).
 - **BaseRepository generic CRUD vs hand-rolled per collection**: Every collection repository extends `BaseRepository` and gets `findAll`, `findById`, `create`, `updateById`, `deleteById`, `exists` for free. Custom queries are added only in collection-specific repos. Tradeoff: the base uses `Record<string, unknown>` and `Partial<TDocument>` for flexibility, which is less type-safe than per-method typed parameters. The typed filter interfaces (`MoodLogFilter`, `UserFilter`) on the service side mitigate this.
 - **No MongoDB in docker-compose**: The compose file does not include a MongoDB service. This keeps the setup flexible (local Mongo, Atlas, or host-network instance) but requires users to provide their own `MONGO_URI`.
 
@@ -259,7 +261,7 @@ The GitHub Actions CI pipeline (`ci.yml`) runs on push/PR to `main`:
 
 ### Mood creation returns 400
 1. Check Zod validation errors in the response `errors` array — each entry has `field` and `message`
-2. Common issues: `intensity` or `energyLevel` outside 1-10, `sleepQuality` outside 1-5, missing required `mood` field
+2. Common issues: `intensity` or `energyLevel` outside 1-10, `sleepQuality` outside 1-5 (all optional, but range-checked when sent), missing required `mood` field
 3. Tag fields must be `string[]`, not comma-separated strings
 
 ### Stats endpoint returns empty data

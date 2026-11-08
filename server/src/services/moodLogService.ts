@@ -16,15 +16,20 @@ interface PaginatedMoodResult {
   data: IMoodLog[];
 }
 
+// Averages are null when no log in the window recorded that field —
+// "no data" must never be reported as 0.
 interface MoodStats {
   period: string;
-  avgIntensity: string | number;
-  avgEnergyLevel: string | number;
-  avgSleepHours: string | number;
-  avgSleepQuality: string | number;
+  avgIntensity: number | null;
+  avgEnergyLevel: number | null;
+  avgSleepHours: number | null;
+  avgSleepQuality: number | null;
   totalLogs: number;
   moodBreakdown: Record<string, number>;
 }
+
+const round1 = (v: number | null | undefined): number | null =>
+  typeof v === 'number' ? Math.round(v * 10) / 10 : null;
 
 export const createMoodService = async (
   userId: string,
@@ -129,10 +134,10 @@ export const getMoodStatsService = async (userId: string, days: number): Promise
 
   return {
     period: `Last ${days} days`,
-    avgIntensity: stats?.avgIntensity?.toFixed(1) || 0,
-    avgEnergyLevel: stats?.avgEnergyLevel?.toFixed(1) || 0,
-    avgSleepHours: stats?.avgSleepHours?.toFixed(1) || 0,
-    avgSleepQuality: stats?.avgSleepQuality?.toFixed(1) || 0,
+    avgIntensity: round1(stats?.avgIntensity),
+    avgEnergyLevel: round1(stats?.avgEnergyLevel),
+    avgSleepHours: round1(stats?.avgSleepHours),
+    avgSleepQuality: round1(stats?.avgSleepQuality),
     totalLogs: stats?.totalLogs || 0,
     moodBreakdown,
   };

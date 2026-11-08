@@ -90,9 +90,9 @@ describe('Mood Log Validation Schemas', () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        // Defaults should be applied
+        // Tag lists default to empty; exercise stays "not recorded".
         expect(result.data.tagsPeople).toEqual([]);
-        expect(result.data.exercise).toBe(false);
+        expect(result.data.exercise).toBeUndefined();
       }
     });
 
@@ -175,18 +175,25 @@ describe('Mood Log Validation Schemas', () => {
       expect(result.success).toBe(false);
     });
 
-    it('rejects missing required fields', () => {
-      const result = createMoodLogSchema.safeParse({
-        mood: 'happy',
-      });
+    it('accepts a mood-only log (quick log) without inventing values', () => {
+      const result = createMoodLogSchema.safeParse({ mood: 'happy' });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.intensity).toBeUndefined();
+        expect(result.data.energyLevel).toBeUndefined();
+        expect(result.data.sleepHours).toBeUndefined();
+        expect(result.data.sleepQuality).toBeUndefined();
+        expect(result.data.exercise).toBeUndefined();
+      }
+    });
+
+    it('rejects a log with no mood', () => {
+      const result = createMoodLogSchema.safeParse({ intensity: 5 });
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        const paths = result.error.issues.map((i) => i.path[0]);
-        expect(paths).toContain('intensity');
-        expect(paths).toContain('energyLevel');
-        expect(paths).toContain('sleepHours');
-        expect(paths).toContain('sleepQuality');
+        expect(result.error.issues.map((i) => i.path[0])).toContain('mood');
       }
     });
   });

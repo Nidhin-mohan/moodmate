@@ -12,11 +12,13 @@ const moodTriggerCategoryEnum = z.enum([
   'random',
 ]);
 
+// Only `mood` is required: a quick log stores just the mood, and every other
+// field is recorded only if the user actually reported it (no invented values).
 export const createMoodLogSchema = z.object({
   mood: z.string().min(1, 'Mood is required'),
   specificEmotion: z.string().optional(),
-  intensity: z.number().int().min(1).max(10),
-  energyLevel: z.number().int().min(1).max(10),
+  intensity: z.number().int().min(1).max(10).optional(),
+  energyLevel: z.number().int().min(1).max(10).optional(),
   stressLevel: z.number().int().min(1).max(10).optional(),
   anxietyLevel: z.number().int().min(1).max(10).optional(),
   tagsPeople: z.array(z.string()).default([]),
@@ -24,9 +26,10 @@ export const createMoodLogSchema = z.object({
   tagsEvents: z.array(z.string()).default([]),
   socialQuality: socialQualityEnum.optional(),
   moodTriggerCategory: moodTriggerCategoryEnum.optional(),
-  sleepHours: z.number().min(0).max(24),
-  sleepQuality: z.number().int().min(1).max(5),
-  exercise: z.boolean().default(false),
+  sleepHours: z.number().min(0).max(24).optional(),
+  sleepQuality: z.number().int().min(1).max(5).optional(),
+  // No default: "not recorded" must stay distinct from "didn't exercise".
+  exercise: z.boolean().optional(),
   exerciseMinutes: z.number().int().min(0).optional(),
   notes: z.string().max(2000).optional(),
   reflections: z.string().max(2000).optional(),
