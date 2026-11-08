@@ -58,6 +58,17 @@ const LIMIT = 20;
 const STICKY_LEFT = "sticky left-0 z-10 bg-card md:static md:bg-transparent";
 const STICKY_RIGHT = "sticky right-0 z-10 bg-card md:static md:bg-transparent";
 
+// Header columns with their responsive classes; body cells use the same constants.
+const COLUMNS = [
+  { label: "Name", className: STICKY_LEFT },
+  { label: "Email", className: "hidden sm:table-cell" },
+  { label: "Role", className: "" },
+  { label: "Pro", className: "" },
+  { label: "Pro Since", className: "hidden lg:table-cell" },
+  { label: "Joined", className: "hidden md:table-cell" },
+  { label: "Actions", className: STICKY_RIGHT },
+];
+
 export default function AdminUsers() {
   const { user: me } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -322,18 +333,12 @@ export default function AdminUsers() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
-                  {["Name", "Email", "Role", "Pro", "Pro Since", "Joined", "Actions"].map((h, i) => (
+                  {COLUMNS.map((col) => (
                     <th
-                      key={h}
-                      className={`px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider ${
-                        i === 0 ? STICKY_LEFT :
-                        i === 1 ? "hidden sm:table-cell" :
-                        i === 4 ? "hidden lg:table-cell" :
-                        i === 5 ? "hidden md:table-cell" :
-                        i === 6 ? STICKY_RIGHT : ""
-                      }`}
+                      key={col.label}
+                      className={`px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider ${col.className}`}
                     >
-                      {h}
+                      {col.label}
                     </th>
                   ))}
                 </tr>
@@ -378,6 +383,7 @@ export default function AdminUsers() {
                           {/* Role */}
                           <td className="px-4 py-3">
                             {isEditing ? (
+                              <>
                               <Select
                                 value={editDraft.role}
                                 onValueChange={(v) => setEditDraft((d) => ({ ...d, role: v as UserRole }))}
@@ -395,6 +401,13 @@ export default function AdminUsers() {
                                   ))}
                                 </SelectContent>
                               </Select>
+                              {/* Visible text, not just a tooltip: tooltips don't show on touch screens. */}
+                              {isSelf && (
+                                <p className="text-[11px] text-muted-foreground mt-1">
+                                  You can't change your own role.
+                                </p>
+                              )}
+                              </>
                             ) : (
                               <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${ROLE_BADGE[u.role]}`}>
                                 {u.role === "admin" && <ShieldCheck size={11} />}
@@ -490,13 +503,15 @@ export default function AdminUsers() {
                                   <Pencil size={13} />
                                   Edit
                                 </Button>
-                                {!u.isDeleted && !isSelf && (
+                                {!u.isDeleted && (
                                   <Button
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => confirmDelete(u._id)}
+                                    disabled={isSelf}
                                     className="h-7 px-2 text-muted-foreground hover:text-destructive text-xs gap-1"
-                                    aria-label="Delete user"
+                                    aria-label={isSelf ? "Delete user (you can't delete your own account)" : "Delete user"}
+                                    title={isSelf ? "You can't delete your own account" : undefined}
                                   >
                                     <Trash2 size={13} />
                                   </Button>

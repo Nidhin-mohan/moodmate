@@ -32,10 +32,10 @@ export const registerUserService = async (
 };
 
 export const loginUserService = async (email: string, password: string): Promise<UserData> => {
-  const user = await userRepository.findByEmail(email);
-  // Soft-deleted accounts get the same message as a wrong password, so we don't
-  // reveal that the account exists.
-  if (!user || user.isDeleted || !(await user.matchPassword(password))) {
+  // Soft-deleted accounts aren't found, so they get the same message as a wrong
+  // password and we don't reveal that the account exists.
+  const user = await userRepository.findActiveByEmail(email);
+  if (!user || !(await user.matchPassword(password))) {
     throw new UnauthorizedError('Invalid email or password');
   }
 

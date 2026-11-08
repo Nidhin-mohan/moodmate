@@ -68,23 +68,24 @@ describe("AdminUsers loading errors", () => {
 });
 
 describe("AdminUsers self-protection", () => {
-  it("marks the admin's own row and offers no delete on it", async () => {
+  it("marks the admin's own row and disables delete on it", async () => {
     render(<AdminUsers />);
 
     const mine = await rowFor("Me Admin");
     const other = await rowFor("Other User");
 
     expect(within(mine).getByText("You")).toBeInTheDocument();
-    expect(within(mine).queryByRole("button", { name: "Delete user" })).not.toBeInTheDocument();
-    expect(within(other).getByRole("button", { name: "Delete user" })).toBeInTheDocument();
+    expect(within(mine).getByRole("button", { name: /delete/i })).toBeDisabled();
+    expect(within(other).getByRole("button", { name: "Delete user" })).toBeEnabled();
   });
 
-  it("locks the role select when editing your own row, but not others", async () => {
+  it("locks the role select when editing your own row and says why", async () => {
     render(<AdminUsers />);
 
     const mine = await rowFor("Me Admin");
     await userEvent.click(within(mine).getByRole("button", { name: /edit/i }));
     expect(within(mine).getByRole("combobox")).toBeDisabled();
+    expect(within(mine).getByText(/can't change your own role/i)).toBeInTheDocument();
 
     await userEvent.click(within(mine).getByRole("button", { name: "Cancel" }));
     const other = await rowFor("Other User");

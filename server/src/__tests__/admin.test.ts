@@ -1,5 +1,6 @@
 import { request, createAuthenticatedUser, createAdminUser } from './helpers';
 import User from '../models/userModel';
+import { softDeleteUserService, updateUserService } from '../services/admin.service';
 
 const asAdmin = (token: string) => ({ Authorization: `Bearer ${token}` });
 
@@ -107,6 +108,33 @@ describe('Admin self-protection', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.message).toMatch(/own account/i);
+  });
+
+  it('cannot be bypassed by sending your own id in upper case', async () => {
+    const admin = await createAdminUser();
+    const upper = admin.userId.toUpperCase();
+
+    const demote = await request
+      .patch(`/api/v1/admin/users/${upper}`)
+      .set(asAdmin(admin.token))
+      .send({ role: 'user' });
+    const del = await request.delete(`/api/v1/admin/users/${upper}`).set(asAdmin(admin.token));
+
+    expect(demote.status).toBe(400);
+    expect(del.status).toBe(400);
+  });
+
+  it('never leaves the system without an active admin', async () => {
+    const onlyAdmin = await createAdminUser();
+    // Simulate a caller that is not the target (e.g. a concurrent request).
+    const someoneElse = '000000000000000000000001';
+
+    await expect(
+      updateUserService({ actorId: someoneElse, targetId: onlyAdmin.userId }, { role: 'user' }),
+    ).rejects.toThrow(/last admin/i);
+    await expect(
+      softDeleteUserService({ actorId: someoneElse, targetId: onlyAdmin.userId }),
+    ).rejects.toThrow(/last admin/i);
   });
 
   it('lets an admin demote and delete a different admin', async () => {
