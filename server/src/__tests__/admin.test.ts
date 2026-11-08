@@ -1,4 +1,5 @@
 import { request, createAuthenticatedUser, createAdminUser } from './helpers';
+import User from '../models/userModel';
 
 const asAdmin = (token: string) => ({ Authorization: `Bearer ${token}` });
 
@@ -16,6 +17,58 @@ describe('Admin access control', () => {
     const res = await request.get('/api/v1/admin/users');
 
     expect(res.status).toBe(401);
+  });
+});
+
+describe('Admin user list: search and filters', () => {
+  const seed = async () => {
+    const base = { password: 'password123' };
+    await User.create([
+      { ...base, name: 'Alice (ops)', email: 'alice@example.com' },
+      { ...base, name: 'Bob', email: 'bob@example.com', isPro: true },
+      { ...base, name: 'Legacy', email: 'legacy@example.com' },
+    ]);
+    // Simulate an account created before the isPro field existed.
+    await User.collection.updateOne({ email: 'legacy@example.com' }, { $unset: { isPro: '' } });
+  };
+  const emails = (res: { body: { data: { email: string }[] } }) =>
+    res.body.data.map((u) => u.email).sort();
+
+  it('treats regex characters in search literally', async () => {
+    const admin = await createAdminUser();
+    await seed();
+
+    const paren = await request.get('/api/v1/admin/users?search=(').set(asAdmin(admin.token));
+    const dotStar = await request.get('/api/v1/admin/users?search=.*').set(asAdmin(admin.token));
+
+    expect(paren.status).toBe(200);
+    expect(emails(paren)).toEqual(['alice@example.com']);
+    expect(dotStar.status).toBe(200);
+    expect(dotStar.body.data).toHaveLength(0);
+  });
+
+  it('rejects an overly long search with 400', async () => {
+    const admin = await createAdminUser();
+
+    const res = await request
+      .get(`/api/v1/admin/users?search=${'a'.repeat(101)}`)
+      .set(asAdmin(admin.token));
+
+    expect(res.status).toBe(400);
+  });
+
+  it('isPro=false includes users that have no isPro field', async () => {
+    const admin = await createAdminUser();
+    await seed();
+
+    const res = await request
+      .get('/api/v1/admin/users?isPro=false&search=example.com')
+      .set(asAdmin(admin.token));
+
+    expect(emails(res)).toEqual(
+      expect.arrayContaining(['alice@example.com', 'legacy@example.com']),
+    );
+    expect(emails(res)).not.toContain('bob@example.com');
   });
 });
 

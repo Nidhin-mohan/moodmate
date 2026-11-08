@@ -34,6 +34,8 @@ export interface ListUsersResult {
   pages: number;
 }
 
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 function toAdminView(user: IUser): AdminUserView {
   const u = user as IUser & { createdAt: Date };
   return {
@@ -64,8 +66,11 @@ export async function listUsersService(query: ListUsersQuery): Promise<ListUsers
     filter.role = role;
   }
 
-  if (typeof isPro === 'boolean') {
-    filter.isPro = isPro;
+  if (isPro === true) {
+    filter.isPro = true;
+  } else if (isPro === false) {
+    // Accounts created before the isPro field existed have no value at all.
+    filter.isPro = { $ne: true };
   }
 
   if (proSinceFrom || proSinceTo) {
@@ -77,7 +82,8 @@ export async function listUsersService(query: ListUsersQuery): Promise<ListUsers
   }
 
   if (search) {
-    const regex = new RegExp(search, 'i');
+    // Escape so user input is matched literally: no 500 on "(", no ".*" match-all, no ReDoS.
+    const regex = new RegExp(escapeRegex(search), 'i');
     filter.$or = [{ name: regex }, { email: regex }];
   }
 

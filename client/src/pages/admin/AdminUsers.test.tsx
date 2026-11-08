@@ -1,7 +1,8 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { AdminUser } from "@/types/admin";
+import { listUsers } from "@/services/adminService";
 import AdminUsers from "./AdminUsers";
 
 const { users } = vi.hoisted(() => {
@@ -37,6 +38,19 @@ vi.mock("@/services/adminService", () => ({
 }));
 
 const rowFor = async (name: string) => (await screen.findByText(name)).closest("tr") as HTMLElement;
+
+describe("AdminUsers loading errors", () => {
+  it("drops the previous results when a later search fails", async () => {
+    render(<AdminUsers />);
+    await screen.findByText("Other User");
+
+    vi.mocked(listUsers).mockRejectedValueOnce(new Error("boom"));
+    await userEvent.type(screen.getByPlaceholderText(/search/i), "zzz");
+
+    await waitFor(() => expect(screen.queryByText("Other User")).not.toBeInTheDocument());
+    expect(screen.getByText(/couldn't load users/i)).toBeInTheDocument();
+  });
+});
 
 describe("AdminUsers self-protection", () => {
   it("marks the admin's own row and offers no delete on it", async () => {

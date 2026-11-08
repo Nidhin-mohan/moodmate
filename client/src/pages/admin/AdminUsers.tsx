@@ -59,6 +59,7 @@ export default function AdminUsers() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -110,9 +111,15 @@ export default function AdminUsers() {
           setUsers(res.data);
           setTotalPages(res.pages);
           setTotal(res.total);
+          setLoadError(null);
         }
       } catch (err) {
         if (!cancelled) {
+          // Don't leave the previous results on screen looking like the answer to this query.
+          setUsers([]);
+          setTotal(0);
+          setTotalPages(1);
+          setLoadError("Couldn't load users. Try again or change the filters.");
           showToast.error(err instanceof Error ? err.message : "Failed to load users.");
         }
       } finally {
@@ -497,8 +504,10 @@ export default function AdminUsers() {
           </div>
 
           {!loading && users.length === 0 && (
-            <div className="py-16 text-center text-muted-foreground text-sm">
-              No users found.
+            <div
+              className={`py-16 text-center text-sm ${loadError ? "text-destructive" : "text-muted-foreground"}`}
+            >
+              {loadError ?? "No users found."}
             </div>
           )}
         </div>
