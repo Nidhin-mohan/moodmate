@@ -3,8 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/api";
-import type { AxiosError } from "axios";
+import { login as loginRequest } from "@/services/authServices";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -20,18 +19,13 @@ const Login = () => {
     setError(null);
     setSubmitting(true);
     try {
-      const response = await api.post("/auth/login", {
-        email,
-        password,
-      });
-      const { token, ...userData } = response.data.data;
+      const response = await loginRequest({ email, password });
+      const { token, ...userData } = response.data;
       login(userData, token);
       navigate("/dashboard");
     } catch (err) {
-      const message =
-        (err as AxiosError<{ message?: string }>).response?.data?.message ||
-        "Login failed. Please try again.";
-      setError(message);
+      // authServices already turned the API error into a user-facing message.
+      setError(err instanceof Error ? err.message : "Login failed. Please try again.");
       setPassword("");
     } finally {
       setSubmitting(false);
