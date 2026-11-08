@@ -45,6 +45,27 @@ export const getMoodLogById = async (id: string): Promise<MoodLogResponse> => {
   }
 };
 
+/**
+ * Fills in details on an entry. The UI calls this only from the "Add details"
+ * flow straight after a quick log, with a patch from detailsPatch() — so it
+ * only ever fills fields that were still empty (logs stay immutable in spirit).
+ */
+export const updateMoodLog = async (
+  id: string,
+  patch: MoodLogPatch
+): Promise<MoodLogResponse> => {
+  try {
+    const response = await api.put<MoodLogResponse>(`/mood/${id}`, patch);
+    return response.data;
+  } catch (error) {
+    const axiosError = error as AxiosError<{ message: string }>;
+    const errorMessage =
+      axiosError.response?.data?.message ||
+      "Couldn't save your details. Please try again.";
+    throw new Error(errorMessage);
+  }
+};
+
 export const getMoodStats = async (days?: number): Promise<MoodStatsResponse> => {
   try {
     const response = await api.get<MoodStatsResponse>("/mood/stats", {
@@ -65,11 +86,13 @@ export const getMoodStats = async (days?: number): Promise<MoodStatsResponse> =>
 export type SocialQuality = 'isolated' | 'neutral' | 'connected';
 export type MoodTriggerCategory = 'work' | 'relationships' | 'health' | 'finances' | 'environment' | 'random';
 
+// Only `mood` is required: a quick log sends just the mood, and every other
+// field is present only if the user reported it.
 export interface MoodLogData {
   mood: string;
   specificEmotion?: string;
-  intensity: number;
-  energyLevel: number;
+  intensity?: number;
+  energyLevel?: number;
   stressLevel?: number;
   anxietyLevel?: number;
   tagsPeople?: string[];
@@ -77,14 +100,17 @@ export interface MoodLogData {
   tagsEvents?: string[];
   socialQuality?: SocialQuality;
   moodTriggerCategory?: MoodTriggerCategory;
-  sleepHours: number;
-  sleepQuality: number;
+  sleepHours?: number;
+  sleepQuality?: number;
   exercise?: boolean;
   exerciseMinutes?: number;
   notes?: string;
   reflections?: string;
   date?: string;
 }
+
+/** Fields "Add details" may fill in — everything except the mood itself. */
+export type MoodLogPatch = Partial<Omit<MoodLogData, "mood" | "date">>;
 
 export interface MoodLog extends MoodLogData {
   _id: string;
@@ -112,10 +138,11 @@ export interface MoodStatsResponse {
   success: boolean;
   data: {
     period: string;
-    avgIntensity: string;
-    avgEnergyLevel: string;
-    avgSleepHours: string;
-    avgSleepQuality: string;
+    // null = nothing recorded in the window (never 0 for "no data")
+    avgIntensity: number | null;
+    avgEnergyLevel: number | null;
+    avgSleepHours: number | null;
+    avgSleepQuality: number | null;
     totalLogs: number;
     moodBreakdown: Record<string, number>;
   };
