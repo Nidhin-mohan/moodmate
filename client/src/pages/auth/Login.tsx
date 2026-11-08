@@ -3,27 +3,32 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import api from "@/api";
+import { login as loginRequest } from "@/services/authServices";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setSubmitting(true);
     try {
-      const response = await api.post("/auth/login", {
-        email,
-        password,
-      });
-      const { token, ...userData } = response.data.data;
+      const response = await loginRequest({ email, password });
+      const { token, ...userData } = response.data;
       login(userData, token);
       navigate("/dashboard");
-    } catch (error) {
-      console.error("Login failed:", error);
+    } catch (err) {
+      // authServices already turned the API error into a user-facing message.
+      setError(err instanceof Error ? err.message : "Login failed. Please try again.");
+      setPassword("");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -73,9 +78,19 @@ const Login = () => {
             />
           </div>
 
+          {error && (
+            <p
+              role="alert"
+              className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-3"
+            >
+              {error}
+            </p>
+          )}
+
           {/* Login Button */}
           <Button
             type="submit"
+            disabled={submitting}
             className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base shadow-md mt-2"
           >
             Log In

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import routeConfig from "./routes.json";
 import { componentMap } from "./componentMap";
-import { canAccess } from "../auth/access";
+import { routeDecision } from "../auth/access";
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/auth/ProtectedRoute";
 import type { RouteConfig } from "./routeTypes";
@@ -16,9 +16,17 @@ const PageLoader = () => (
 
 export function AppRouter() {
   const { isLoggedIn, user } = useAuth();
-  // Use the actual stored role so admin/therapist routes resolve correctly.
-  // Falls back to "user" for logged-in sessions that predate the role field.
-  const userRole = isLoggedIn ? (user?.role ?? "user") : "public";
+
+  const guard = (allowed: string[], element: JSX.Element) => {
+    switch (routeDecision(isLoggedIn, user?.role, allowed)) {
+      case "allow":
+        return element;
+      case "login":
+        return <Navigate to="/login" replace />;
+      case "unauthorized":
+        return <Navigate to="/unauthorized" replace />;
+    }
+  };
 
   const buildRoutes = (config: RouteConfig[]): RouteObject[] =>
     config.map((r) => {
@@ -47,9 +55,7 @@ export function AppRouter() {
 
       return {
         path: r.path,
-        element: canAccess(userRole, r.roles)
-          ? element
-          : <Navigate to="/unauthorized" replace />,
+        element: guard(r.roles, element),
         children: r.children ? buildRoutes(r.children) : undefined,
       };
     });

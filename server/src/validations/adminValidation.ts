@@ -11,7 +11,7 @@ export const listUsersQuerySchema = z.object({
     .optional()
     .transform((v) => (v ? parseInt(v, 10) : 20))
     .pipe(z.number().int().min(1).max(100)),
-  search: z.string().optional(),
+  search: z.string().trim().max(100).optional(),
   role: z.enum(['admin', 'user', 'therapist']).optional(),
   isPro: z
     .string()
@@ -22,8 +22,8 @@ export const listUsersQuerySchema = z.object({
       return undefined;
     }),
   // ISO date strings for proSince range
-  proSinceFrom: z.string().optional(),
-  proSinceTo: z.string().optional(),
+  proSinceFrom: z.coerce.date().optional(),
+  proSinceTo: z.coerce.date().optional(),
   includeDeleted: z
     .string()
     .optional()

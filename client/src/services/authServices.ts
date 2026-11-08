@@ -10,8 +10,13 @@ import { AxiosError } from "axios";
 export const login = async (
   credentials: LoginCredentials
 ): Promise<AuthResponse> => {
-  const response = await api.post<AuthResponse>("/auth/login", credentials);
-  return response.data;
+  try {
+    const response = await api.post<AuthResponse>("/auth/login", credentials);
+    return response.data;
+  } catch (error) {
+    const axiosError = error as AxiosError<{ message: string }>;
+    throw new Error(axiosError.response?.data?.message || "Login failed. Please try again.");
+  }
 };
 
 export const signup = async (userData: SignupData): Promise<AuthResponse> => {

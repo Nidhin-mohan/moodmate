@@ -49,9 +49,11 @@ Express + TypeScript + Mongoose + MongoDB. Follows a layered pattern:
 
 - **Routes** → **Controllers** (thin: parse/validate → call service → respond) → **Services** (business logic) → **Repositories** (data access)
 - **Repositories**: Generic `BaseRepository<T>` provides CRUD (findAll with filter/sort/pagination, findById, create, updateById, deleteById, exists) for every collection. `UserRepository` and `MoodLogRepository` extend it with collection-specific queries. Repositories export singleton instances (`export const userRepository = new UserRepository()`). Services never import Mongoose models directly — all DB access goes through repositories.
-- **Validations**: Zod schemas in `validations/` — validated in controllers before calling services.
-- **Error handling**: Custom error classes in `utils/customError.ts` (BadRequestError, UnauthorizedError, NotFoundError, ConflictError) — all extend a base `CustomError` class with `statusCode` and `errorCode` properties. Central `errorHandler` middleware catches all. `ZodError` gets special handling with field-level detail. Async handlers wrapped via `utils/asyncHandler.ts` which creates a child Pino logger with `{ task: taskName, requestId }` and logs "started", "completed", and "failed" per handler.
-- **Auth**: Stateless JWT (Bearer token, 7-day expiry). `authMiddleware.ts` verifies token, fetches user via `userRepository.findByIdSecure()` (excluding password), and attaches `req.user`. Three distinct failure paths: missing/malformed header, valid token but deleted user, invalid/expired token.
+- **Validations**: Zod schemas in `validations/` — validated in controllers before calling services. This includes query strings (`listMoodsQuerySchema`, `moodStatsQuerySchema`, `listUsersQuerySchema`): never `parseInt(req.query.x)` by hand, so bad input is a 400 and operator objects like `mood[$ne]=x` never reach MongoDB. Emails are trimmed and lower-cased in the register/login schemas.
+- **Error handling**: Custom error classes in `utils/customError.ts` (BadRequestError 400, UnauthorizedError 401, ForbiddenError 403, NotFoundError 404, ConflictError 409) — 401 means "not authenticated" (no/bad/expired token), 403 means "authenticated but not allowed" (e.g. a non-admin on an admin route). All extend a base `CustomError` class with `statusCode` and `errorCode` properties. Central `errorHandler` middleware catches all. `ZodError` gets special handling with field-level detail. Async handlers wrapped via `utils/asyncHandler.ts` which creates a child Pino logger with `{ task: taskName, requestId }` and logs "started", "completed", and "failed" per handler.
+- **Auth**: Stateless JWT (Bearer token, 7-day expiry). `authMiddleware.ts` verifies token, fetches user via `userRepository.findByIdSecure()` (excluding password, and ignoring soft-deleted users), and attaches `req.user`. Three distinct failure paths: missing/malformed header, valid token but user missing or soft-deleted, invalid/expired token.
+- **Soft delete**: Admins soft-delete users (`isDeleted: true`). The one definition of "active" is `ACTIVE_USER_FILTER` in `repositories/userRepository.ts` — use it (or `findActiveByEmail` / `findByIdSecure` / `countActiveAdmins`) whenever deleted users must be ignored. Soft-deleted users can't log in (same "Invalid email or password" message), their tokens stop working, and the weekly email job skips them. Their email stays taken for registration.
+- **Admin rules**: `/api/v1/admin/*` requires `role: "admin"` (`requireAdmin` → 403 otherwise). An admin can't change their own role or delete themselves, and no change may remove the last active admin. Admin services take an `AdminAction { actorId, targetId }`; ids are compared case-insensitively (ObjectIds are hex and the API accepts either case).
 - **Rate limiting**: Auth routes rate-limited (20 req/15min per IP). Health endpoint rate-limited (10 req/1min per IP).
 - **Models**: `User` (bcrypt pre-save hook with salt rounds 10, `matchPassword` method, three roles: admin/user/therapist) and `MoodLog` (compound index `{user:1, date:-1}` for performant per-user time-ordered queries).
 - **Env validation**: `config/env.ts` uses Zod to validate all env vars at startup — app fails fast with human-readable errors per field. PORT defaults to 5000.
@@ -62,11 +64,13 @@ Express + TypeScript + Mongoose + MongoDB. Follows a layered pattern:
 - **ObjectId validation**: `validateObjectId()` middleware on `/:id` routes returns clean 400 instead of Mongoose cast errors.
 - **Constants**: `constants/httpStatusCodes.ts` exports `HTTP_STATUS` enum and `MESSAGES` map used throughout controllers and error classes.
 
-API base path: `/api/v1/`. Auth routes at `/api/v1/auth/`, mood routes at `/api/v1/mood/`.
+API base path: `/api/v1/`. Auth routes at `/api/v1/auth/`, mood routes at `/api/v1/mood/`, admin routes at `/api/v1/admin/`.
 
 **Health endpoint**: `GET /health` — returns `{ success, status, db, uptime }`. Checks `mongoose.connection.readyState` (1 = connected). Returns 200 if healthy, 503 if unhealthy. Rate-limited to 10 req/min. Used for Docker health checks and load balancer probes.
 
-**Stats endpoint**: `GET /api/v1/mood/stats?days=30` — `MoodLogRepository.getStatsByUser()` runs two parallel MongoDB aggregation pipelines — one for numeric averages (intensity, energy, sleep), one for mood-type breakdown. All mood queries include `{ user: userId }` filter to enforce ownership.
+**Stats endpoint**: `GET /api/v1/mood/stats?days=30` (`days` 1–365, default 30) — `MoodLogRepository.getStatsByUser()` runs two parallel MongoDB aggregation pipelines — one for numeric averages (intensity, energy, sleep), one for mood-type breakdown. The window is `[now - days, now]`, so any future-dated legacy logs are ignored. All mood queries include `{ user: userId }` filter to enforce ownership.
+
+**Mood dates**: create/update reject a `date` more than one day in the future (one day of slack for timezones).
 
 **Full API route table**:
 
@@ -77,21 +81,24 @@ API base path: `/api/v1/`. Auth routes at `/api/v1/auth/`, mood routes at `/api/
 | POST | `/api/v1/auth/login` | No (rate-limited) | Login, returns JWT |
 | GET | `/api/v1/auth/profile` | JWT | Get own profile |
 | POST | `/api/v1/mood` | JWT | Create mood log |
-| GET | `/api/v1/mood` | JWT | List logs (paginated, filterable by date range and mood) |
-| GET | `/api/v1/mood/stats` | JWT | Aggregated stats |
+| GET | `/api/v1/mood` | JWT | List logs (`page` ≥1, `limit` 1–100, `startDate`/`endDate` ISO, `mood`) |
+| GET | `/api/v1/mood/stats` | JWT | Aggregated stats (`days` 1–365) |
 | GET | `/api/v1/mood/:id` | JWT | Get single log |
 | PUT | `/api/v1/mood/:id` | JWT | Update log |
 | DELETE | `/api/v1/mood/:id` | JWT | Delete log |
+| GET | `/api/v1/admin/users` | JWT + admin | List users (`page`, `limit`, `search` ≤100 chars, literal match; `role`, `isPro`, `proSinceFrom`/`proSinceTo`, `includeDeleted`) |
+| PATCH | `/api/v1/admin/users/:id` | JWT + admin | Update `role` / `isPro` / `name` (not your own role) |
+| DELETE | `/api/v1/admin/users/:id` | JWT + admin | Soft-delete (not yourself, not the last admin) |
 
 ### Client (`client/src/`)
 
 React 18 + TypeScript + Vite 6 + Tailwind CSS v3 + shadcn/ui (new-york style, zinc base).
 
 - **Provider wrapping order** (outermost → innermost): `StrictMode` → `AuthProvider` → `BrowserRouter` → `ToastProvider` + `App`. AuthProvider is outside BrowserRouter so auth state is available at the router level.
-- **Routing**: Data-driven via `routes/routes.json` config. `AppRouter` reads JSON, lazy-loads components via `componentMap.ts` (all pages are code-split with `React.lazy`), checks role-based access with `canAccess()`, wraps protected routes in `<ProtectedRoute>`. To add a new route: one entry in `routes.json` + one entry in `componentMap.ts`.
+- **Routing**: Data-driven via `routes/routes.json` config. `AppRouter` reads JSON, lazy-loads components via `componentMap.ts` (all pages are code-split with `React.lazy`), and guards each route with `routeDecision(isLoggedIn, role, allowed)` from `auth/access.ts`: `allow`, `login` (logged out on a protected route → `/login`), or `unauthorized` (logged in without the role → `/unauthorized`). `canAccess()` holds the role rules: `public` routes are open, and admins and therapists inherit every `user` route. To add a new route: one entry in `routes.json` + one entry in `componentMap.ts`.
 - **Auth state**: React Context (`context/AuthContext.tsx`), token stored under `"token"` and user under `"user"` in localStorage. State initialized synchronously from localStorage — no async fetch, no loading flash. `isLoggedIn` is derived from `!!token`.
-- **API layer**: Axios instance in `api/index.ts`. Base URL from `VITE_API_BASE_URL` env var, falls back to `"/api/v1"` if not set (allows nginx proxy to handle routing in Docker). Request interceptor reads token from localStorage (not React state — avoids stale closures). Response interceptor does hard `window.location.href = "/login"` redirect on 401.
-- **Services**: `services/authServices.ts` and `services/moodLogService.ts` wrap API calls. Error pattern: catch `AxiosError`, extract `response.data.message`, throw plain `Error` with user-friendly fallback.
+- **API layer**: Axios instance in `api/index.ts`. Base URL from `VITE_API_BASE_URL` env var, falls back to `"/api/v1"` if not set (allows nginx proxy to handle routing in Docker). Request interceptor reads token from localStorage (not React state — avoids stale closures). Response handler `onResponseError`: on a 401 it clears `token` and `user` and hard-redirects with `window.location.assign("/login")` — except for `/auth/login` and `/auth/register`, where a 401 means bad credentials and the form shows the error. A 403 never logs the user out.
+- **Services**: `services/authServices.ts`, `services/moodLogService.ts` and `services/adminService.ts` wrap API calls; pages never call `api` directly. Error pattern: catch `AxiosError`, extract `response.data.message`, throw plain `Error` with user-friendly fallback.
 - **UI**: shadcn/ui primitives in `components/ui/`, layout shell in `components/layout/`. All colors use CSS custom properties via `hsl(var(--xyz))` — theme changes only require updating CSS variables. Dark mode via Tailwind `class` strategy.
 - **Toast notifications**: react-toastify configured at top-right position with 3000ms auto-close. `showToast()` helper in `utils/toast.tsx` is callable from anywhere without hooks.
 - **Forms**: react-hook-form v7 + zodResolver + Zod for validation. Tag fields collected as comma-separated strings, converted to `string[]` in `onSubmit`.
@@ -107,6 +114,10 @@ React 18 + TypeScript + Vite 6 + Tailwind CSS v3 + shadcn/ui (new-york style, zi
 | `/mood-tracking` | MoodTrackingForm | user | MainLayout |
 | `/mood-history` | MoodHistory | user | MainLayout |
 | `/profile` | UserProfile | user | MainLayout |
+| `/tools` | Tools | public, user | MainLayout |
+| `/admin/users` | AdminUsers | admin | MainLayout |
+
+"user" routes are also open to `therapist` and `admin` (see `canAccess`).
 
 ### Linting & Formatting (Server)
 
@@ -201,14 +212,14 @@ Runs two parallel jobs:
 Server tests use **mongodb-memory-server** for isolated in-memory MongoDB — no external DB needed.
 - `__tests__/env-setup.ts`: Injects test env vars before module loading (Jest `setupFiles`) — critical so `config/env.ts` gets valid test vars without a real `.env`.
 - `__tests__/setup.ts`: MongoMemoryServer lifecycle. `afterEach` drops all collections for isolation. `afterAll` shuts down in-memory server.
-- `__tests__/helpers.ts`: Shared supertest request, `createAuthenticatedUser()`, `validMoodLog` fixture.
-- Tests: `auth.test.ts` (integration), `mood.test.ts` (integration), `validation.test.ts` (unit/Zod, no DB/HTTP).
+- `__tests__/helpers.ts`: Shared supertest request, `createAuthenticatedUser()`, `createAdminUser()`, `makeAdmin()`, `validMoodLog` fixture. `createAuthenticatedUser()` inserts the user directly and signs the token itself — it does **not** call `/auth/register`, because the auth rate limiter (20 req/15 min) would 429 any file that needs many users. Only tests of registration/login hit those endpoints; each Jest file gets a fresh app and limiter, so keep heavy auth-endpoint tests in their own file.
+- Tests: `auth.test.ts`, `emailCase.test.ts`, `mood.test.ts`, `moodQuery.test.ts` (query validation + future dates), `admin.test.ts` (access, search/filters, self-protection, last admin) — integration; `weeklyAnalysisJob.test.ts` (job with AI and email mocked); `validation.test.ts` (unit/Zod, no DB/HTTP).
 - Jest config (`jest.config.ts`): `preset: ts-jest`, 30-second timeout for slow in-memory DB startup, `silent: true` suppresses console noise. Coverage excludes `__tests__/`, `@types/`, and `seeds/`.
 - **Coverage**: `npm run test:coverage` generates reports in `coverage/` (text + lcov). Thresholds: 50% branches, 60% functions/lines/statements.
 
 Client tests use **Vitest** (config in `client/vite.config.ts`, `test` block) with jsdom and React Testing Library.
-- `src/test/setup.ts`: registers jest-dom matchers, runs RTL `cleanup` and clears localStorage after each test.
-- Tests sit next to the code as `*.test.ts(x)`. Mock the Axios instance with `vi.mock("@/api", …)`. `restoreMocks: true` resets mocks between tests, so don't add a `beforeEach(mockReset)`; it breaks `mockRejectedValue`.
+- `src/test/setup.ts`: registers jest-dom matchers, stubs `ResizeObserver` (jsdom lacks it; Radix Slider/Switch need it), runs RTL `cleanup` and clears localStorage after each test.
+- Tests sit next to the code as `*.test.ts(x)`. Pages: mock the service module (`vi.mock("@/services/…")`); services: mock the Axios instance (`vi.mock("@/api", …)`). `restoreMocks: true` resets mocks between tests, so don't add a `beforeEach(mockReset)`; it breaks `mockRejectedValue`. Give a mock's default behaviour as the `vi.fn(impl)` argument (not `mockResolvedValue` in the factory) so it survives the reset, and put fixtures used inside `vi.mock` factories in `vi.hoisted`.
 
 ## Environment Variables
 
@@ -264,7 +275,7 @@ User → EC2 (Docker: backend container) → MongoDB (external)
 
 - **Data-driven routing (JSON config) vs JSX routes**: Routes are declared in `routes.json` rather than JSX. This adds indirection (two files to touch per route) but centralizes route metadata (roles, layouts) and makes it easy to add role-based access without scattering auth checks across components.
 - **localStorage for auth vs httpOnly cookies**: Tokens are stored in localStorage and sent via Authorization header. This is simpler to implement and works across subdomains, but is vulnerable to XSS. The `withCredentials: true` on Axios is set defensively for a future migration to cookie-based auth.
-- **401 interceptor uses `window.location.href` vs React navigation**: The Axios interceptor can't access React context or `useNavigate`. A hard redirect guarantees a clean slate (full re-render) on session expiry. The tradeoff is losing any in-memory state.
+- **401 interceptor uses a hard redirect vs React navigation**: The Axios interceptor can't access React context or `useNavigate`. `window.location.assign("/login")` guarantees a clean slate (full re-render) on session expiry. The tradeoff is losing any in-memory state. Credential endpoints are excluded so a wrong password doesn't reload the login page.
 - **`componentMap` typed as `any`**: The route config references components by string key. TypeScript can't narrow `componentMap[r.component]` to a valid React component without the `as any` escape hatch. This is a known compromise for the data-driven routing pattern.
 - **Separate tag arrays vs single tags array**: `tagsPeople`, `tagsPlaces`, `tagsEvents` are stored as three separate arrays rather than a flat `tags[]` with types. This makes aggregation queries simpler (no nested filtering) at the cost of a more rigid schema.
 - **Service layer error wrapping**: Services catch `AxiosError` and throw plain `Error`. This hides transport details from consumers but loses the original status code. The tradeoff favors simpler error handling in UI components.
@@ -285,6 +296,11 @@ User → EC2 (Docker: backend container) → MongoDB (external)
 - **Services must never import Mongoose models directly**: All DB access goes through repositories. If a service imports a model, it bypasses the abstraction and re-introduces tight coupling. Services should import from `repositories/`, only importing type interfaces (like `IMoodLog`) from `models/`.
 - **Docker frontend port differs from dev**: `npm run dev` serves client at `localhost:5173`, but the Docker compose maps frontend to `localhost:3000` (nginx on port 80 → host port 3000).
 - **MongoMemoryServer binary caching on CI**: First run downloads ~100MB MongoDB binary. CI caches `~/.cache/mongodb-binaries` to avoid re-downloading on every pipeline run.
+- **Never build a RegExp from user input**: admin search used `new RegExp(search)` — `(` was a 500 and `.*` matched everyone (and ReDoS was possible). Escape first (`escapeRegex` in `admin.service.ts`) and cap the length in Zod.
+- **Legacy documents miss newer fields**: users created before `isPro` existed have no field at all, so `{ isPro: false }` skipped them. Filter "not true" as `{ $ne: true }` (same for `isDeleted`).
+- **Compare ObjectIds case-insensitively**: Mongo accepts upper-case hex ids, so a plain string `===` let an admin bypass "not yourself" checks by upper-casing their own id.
+- **lint-staged fails with "Needed a single revision" on Windows**: with `core.autocrlf`, unstaged LF files make `git stash create` print a CRLF warning that lint-staged passes on as a revision. Commit with `git -c core.safecrlf=false commit …` (the hook still runs), or stage those files.
+- **Don't run git commands in parallel**: a `git add` racing a commit's pre-commit hook corrupts lint-staged's backup step.
 
 ## Incident Simulations
 

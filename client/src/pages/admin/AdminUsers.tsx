@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { showToast } from "@/utils/toast";
+import { useAuth } from "@/context/AuthContext";
 import { deleteUser, listUsers, updateUser } from "@/services/adminService";
 import type { AdminUser, ListUsersParams, UpdateUserPayload } from "@/types/admin";
 import type { UserRole } from "@/types/auth";
@@ -51,12 +52,31 @@ interface EditDraft {
 
 const LIMIT = 20;
 
+// On narrow screens the table scrolls sideways. Pin who-the-row-is (Name) and
+// what-you-can-do (Actions) so editing never hides either. Opaque bg so the
+// scrolling cells don't show through; from md up there's room, so unpin.
+const STICKY_LEFT = "sticky left-0 z-10 bg-card md:static md:bg-transparent";
+const STICKY_RIGHT = "sticky right-0 z-10 bg-card md:static md:bg-transparent";
+
+// Header columns with their responsive classes; body cells use the same constants.
+const COLUMNS = [
+  { label: "Name", className: STICKY_LEFT },
+  { label: "Email", className: "hidden sm:table-cell" },
+  { label: "Role", className: "" },
+  { label: "Pro", className: "" },
+  { label: "Pro Since", className: "hidden lg:table-cell" },
+  { label: "Joined", className: "hidden md:table-cell" },
+  { label: "Actions", className: STICKY_RIGHT },
+];
+
 export default function AdminUsers() {
+  const { user: me } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -108,9 +128,15 @@ export default function AdminUsers() {
           setUsers(res.data);
           setTotalPages(res.pages);
           setTotal(res.total);
+          setLoadError(null);
         }
       } catch (err) {
         if (!cancelled) {
+          // Don't leave the previous results on screen looking like the answer to this query.
+          setUsers([]);
+          setTotal(0);
+          setTotalPages(1);
+          setLoadError("Couldn't load users. Try again or change the filters.");
           showToast.error(err instanceof Error ? err.message : "Failed to load users.");
         }
       } finally {
@@ -209,7 +235,7 @@ export default function AdminUsers() {
               User Management
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {total > 0 ? `${total} user${total !== 1 ? "s" : ""}` : ""}
+              {loading || loadError ? "" : `${total} user${total !== 1 ? "s" : ""}`}
             </p>
           </div>
         </div>
@@ -307,16 +333,12 @@ export default function AdminUsers() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
-                  {["Name", "Email", "Role", "Pro", "Pro Since", "Joined", "Actions"].map((h, i) => (
+                  {COLUMNS.map((col) => (
                     <th
-                      key={h}
-                      className={`px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider ${
-                        i === 1 ? "hidden sm:table-cell" :
-                        i === 4 ? "hidden lg:table-cell" :
-                        i === 5 ? "hidden md:table-cell" : ""
-                      }`}
+                      key={col.label}
+                      className={`px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider ${col.className}`}
                     >
-                      {h}
+                      {col.label}
                     </th>
                   ))}
                 </tr>
@@ -327,6 +349,8 @@ export default function AdminUsers() {
                   : users.map((u) => {
                       const isEditing = editingId === u._id;
                       const isDeleting = deletingId === u._id;
+                      // The server refuses self-demotion and self-deletion; mirror that here.
+                      const isSelf = u._id === me?.userId;
                       return (
                         <tr
                           key={u._id}
@@ -336,9 +360,14 @@ export default function AdminUsers() {
                           }`}
                         >
                           {/* Name */}
-                          <td className="px-4 py-3">
+                          <td className={`px-4 py-3 ${STICKY_LEFT}`}>
                             <div className="font-medium text-foreground flex items-center gap-1.5">
                               {u.name}
+                              {isSelf && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-medium">
+                                  You
+                                </span>
+                              )}
                               {u.isDeleted && (
                                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/15 text-destructive font-medium">
                                   deleted
@@ -354,11 +383,16 @@ export default function AdminUsers() {
                           {/* Role */}
                           <td className="px-4 py-3">
                             {isEditing ? (
+                              <>
                               <Select
                                 value={editDraft.role}
                                 onValueChange={(v) => setEditDraft((d) => ({ ...d, role: v as UserRole }))}
+                                disabled={isSelf}
                               >
-                                <SelectTrigger className="h-8 w-32 text-xs">
+                                <SelectTrigger
+                                  className="h-8 w-32 text-xs"
+                                  title={isSelf ? "You can't change your own role" : undefined}
+                                >
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -367,6 +401,13 @@ export default function AdminUsers() {
                                   ))}
                                 </SelectContent>
                               </Select>
+                              {/* Visible text, not just a tooltip: tooltips don't show on touch screens. */}
+                              {isSelf && (
+                                <p className="text-[11px] text-muted-foreground mt-1">
+                                  You can't change your own role.
+                                </p>
+                              )}
+                              </>
                             ) : (
                               <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium capitalize ${ROLE_BADGE[u.role]}`}>
                                 {u.role === "admin" && <ShieldCheck size={11} />}
@@ -402,7 +443,7 @@ export default function AdminUsers() {
                           </td>
 
                           {/* Actions */}
-                          <td className="px-4 py-3 text-right">
+                          <td className={`px-4 py-3 text-right ${STICKY_RIGHT}`}>
                             {isDeleting ? (
                               <div className="flex items-center justify-end gap-2">
                                 <span className="text-xs text-destructive mr-1">Delete?</span>
@@ -467,8 +508,10 @@ export default function AdminUsers() {
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => confirmDelete(u._id)}
+                                    disabled={isSelf}
                                     className="h-7 px-2 text-muted-foreground hover:text-destructive text-xs gap-1"
-                                    aria-label="Delete user"
+                                    aria-label={isSelf ? "Delete user (you can't delete your own account)" : "Delete user"}
+                                    title={isSelf ? "You can't delete your own account" : undefined}
                                   >
                                     <Trash2 size={13} />
                                   </Button>
@@ -484,8 +527,10 @@ export default function AdminUsers() {
           </div>
 
           {!loading && users.length === 0 && (
-            <div className="py-16 text-center text-muted-foreground text-sm">
-              No users found.
+            <div
+              className={`py-16 text-center text-sm ${loadError ? "text-destructive" : "text-muted-foreground"}`}
+            >
+              {loadError ?? "No users found."}
             </div>
           )}
         </div>

@@ -1,5 +1,5 @@
 import { showToast } from "@/utils/toast";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api/v1";
 
@@ -9,10 +9,9 @@ const api = axios.create({
   withCredentials: true, // Enable cookies for authentication
 });
 
-// Add request interceptor (optional)
+// Attach the token from localStorage (not React state, to avoid stale closures).
 api.interceptors.request.use(
   (config) => {
-    // Add headers or tokens here if needed
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -25,17 +24,23 @@ api.interceptors.request.use(
   }
 );
 
-// Add response interceptor (optional)
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access (e.g., redirect to login)
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
+// A 401 on these means "bad credentials", not "session expired": let the form handle it.
+const CREDENTIAL_ENDPOINTS = ["/auth/login", "/auth/register"];
+
+// 401 → session is gone: clear it and hard-redirect to /login.
+// 403 → logged in but not allowed: leave the session alone; the caller shows the error.
+export const onResponseError = (error: AxiosError) => {
+  const url = error.config?.url ?? "";
+  const isCredentialCall = CREDENTIAL_ENDPOINTS.some((p) => url.endsWith(p));
+
+  if (error.response?.status === 401 && !isCredentialCall) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.assign("/login");
   }
-);
+  return Promise.reject(error);
+};
+
+api.interceptors.response.use((response) => response, onResponseError);
 
 export default api;

@@ -1,4 +1,6 @@
-import { request, createAuthenticatedUser } from './helpers';
+import { request, createAuthenticatedUser, createAdminUser, validMoodLog } from './helpers';
+import User from '../models/userModel';
+import { userRepository } from '../repositories/userRepository';
 
 describe('Auth Endpoints', () => {
   // ── Registration ──────────────────────────────────────
@@ -150,5 +152,72 @@ describe('Auth Endpoints', () => {
 
       expect(res.status).toBe(401);
     });
+  });
+
+  // ── Soft-deleted accounts ─────────────────────────────
+
+  describe('soft-deleted user', () => {
+    const softDelete = async (userId: string) => {
+      const admin = await createAdminUser();
+      const res = await request
+        .delete(`/api/v1/admin/users/${userId}`)
+        .set('Authorization', `Bearer ${admin.token}`);
+      expect(res.status).toBe(200);
+    };
+
+    it('cannot log in, and gets the same message as a wrong password', async () => {
+      const user = await createAuthenticatedUser();
+      await softDelete(user.userId);
+
+      const res = await request
+        .post('/api/v1/auth/login')
+        .send({ email: user.email, password: user.password });
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toBe('Invalid email or password');
+    });
+
+    it('cannot use a token issued before the deletion', async () => {
+      const user = await createAuthenticatedUser();
+      await softDelete(user.userId);
+
+      const profile = await request
+        .get('/api/v1/auth/profile')
+        .set('Authorization', `Bearer ${user.token}`);
+      const mood = await request
+        .post('/api/v1/mood')
+        .set('Authorization', `Bearer ${user.token}`)
+        .send(validMoodLog);
+
+      expect(profile.status).toBe(401);
+      expect(mood.status).toBe(401);
+    });
+
+    it('cannot re-register with the same email', async () => {
+      const user = await createAuthenticatedUser();
+      await softDelete(user.userId);
+
+      const res = await request
+        .post('/api/v1/auth/register')
+        .send({ name: 'Again', email: user.email, password: 'password123' });
+
+      expect(res.status).toBe(409);
+    });
+  });
+});
+
+describe('userRepository.findWeeklyAnalysisRecipients', () => {
+  it('returns active Pro users only', async () => {
+    // Inserted directly: going through /register here would trip the auth rate limiter.
+    const base = { name: 'U', password: 'password123' };
+    await User.create([
+      { ...base, email: 'pro@example.com', isPro: true },
+      { ...base, email: 'deleted-pro@example.com', isPro: true, isDeleted: true },
+      { ...base, email: 'free@example.com' },
+    ]);
+
+    const recipients = await userRepository.findWeeklyAnalysisRecipients();
+
+    expect(recipients.map((u) => u.email)).toEqual(['pro@example.com']);
   });
 });

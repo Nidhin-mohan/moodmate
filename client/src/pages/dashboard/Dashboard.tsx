@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { getAllMoodLogs, getMoodStats } from "@/services/moodLogService";
 import type { MoodLog, MoodStatsResponse } from "@/services/moodLogService";
+import { formatActivityDate } from "@/lib/formatActivityDate";
 import {
   Plus,
   TrendingUp,
@@ -57,19 +58,6 @@ const Dashboard = () => {
   const topMood = stats?.moodBreakdown
     ? Object.entries(stats.moodBreakdown).sort(([, a], [, b]) => b - a)[0]?.[0] ?? "—"
     : "—";
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) {
-      return `Today, ${date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-    } else if (diffDays === 1) {
-      return `Yesterday, ${date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
-    }
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-  };
 
   if (loading) {
     return (
@@ -187,7 +175,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md whitespace-nowrap shrink-0 ml-4">
-                      {formatDate(item.date ?? item.createdAt)}
+                      {formatActivityDate(item.date ?? item.createdAt)}
                     </span>
                   </div>
                 ))}

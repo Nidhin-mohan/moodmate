@@ -8,17 +8,14 @@ import { weeklyAnalysisTemplate } from '../templates/email/weeklyAnalysis';
 
 const JOB_NAME = 'weekly-mood-analysis';
 
-async function run(): Promise<void> {
+// Exported for tests; production runs it on the cron schedule below.
+export async function runWeeklyAnalysisJob(): Promise<void> {
   const jobLogger = logger.child({ job: JOB_NAME });
   jobLogger.info('Job started');
 
-  const { data: users, total } = await userRepository.findAll({
-    filter: { isPro: true },
-    select: ['_id', 'name', 'email'],
-    pagination: { skip: 0, limit: 10_000 },
-  });
+  const users = await userRepository.findWeeklyAnalysisRecipients();
 
-  jobLogger.info({ totalUsers: total }, 'Processing users');
+  jobLogger.info({ totalUsers: users.length }, 'Processing users');
 
   let succeeded = 0;
   let insufficient = 0;
@@ -54,7 +51,9 @@ async function run(): Promise<void> {
 
 export function scheduleWeeklyAnalysisJob(): void {
   cron.schedule(CRON_SCHEDULES.EVERY_SUNDAY_3AM, () => {
-    run().catch((err) => logger.error({ job: JOB_NAME, err }, 'Unhandled job error'));
+    runWeeklyAnalysisJob().catch((err) =>
+      logger.error({ job: JOB_NAME, err }, 'Unhandled job error'),
+    );
   });
 
   logger.info({ job: JOB_NAME, schedule: CRON_SCHEDULES.EVERY_SUNDAY_3AM }, 'Cron job registered');

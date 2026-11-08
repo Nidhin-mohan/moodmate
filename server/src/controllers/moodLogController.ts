@@ -1,6 +1,11 @@
 import { HTTP_STATUS } from '../constants/httpStatusCodes';
 import { asyncHandler } from '../utils/asyncHandler';
-import { createMoodLogSchema, updateMoodLogSchema } from '../validations/moodLogValidation';
+import {
+  createMoodLogSchema,
+  updateMoodLogSchema,
+  listMoodsQuerySchema,
+  moodStatsQuerySchema,
+} from '../validations/moodLogValidation';
 import {
   createMoodService,
   getAllMoodsService,
@@ -25,13 +30,7 @@ export const createMood = asyncHandler('Create Mood Log', async (req, res) => {
 });
 
 export const getAllMoods = asyncHandler('Get All Moods', async (req, res) => {
-  const result = await getAllMoodsService(req.user!._id, {
-    page: parseInt(req.query.page as string) || 1,
-    limit: parseInt(req.query.limit as string) || 20,
-    startDate: req.query.startDate as string,
-    endDate: req.query.endDate as string,
-    mood: req.query.mood as string,
-  });
+  const result = await getAllMoodsService(req.user!._id, listMoodsQuerySchema.parse(req.query));
 
   res.status(HTTP_STATUS.OK).json({
     success: true,
@@ -68,7 +67,7 @@ export const deleteMood = asyncHandler('Delete Mood Log', async (req, res) => {
 });
 
 export const getMoodStats = asyncHandler('Get Mood Stats', async (req, res) => {
-  const days = parseInt(req.query.days as string) || 30;
+  const { days } = moodStatsQuerySchema.parse(req.query);
   const statsData = await getMoodStatsService(req.user!._id, days);
 
   res.status(HTTP_STATUS.OK).json({

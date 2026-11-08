@@ -68,7 +68,8 @@ class MoodLogRepository extends BaseRepository<IMoodLog> {
     const matchStage = {
       $match: {
         user: new Types.ObjectId(userId),
-        date: { $gte: startDate },
+        // Upper bound so any future-dated legacy logs don't count as "recent".
+        date: { $gte: startDate, $lte: new Date() },
       },
     };
 

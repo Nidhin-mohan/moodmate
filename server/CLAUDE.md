@@ -40,7 +40,7 @@ Express + TypeScript + Mongoose + MongoDB. Layered pattern:
 - `src/models/` — Mongoose schemas (`User`, `MoodLog`) + `index.ts` barrel export
 - `src/middlewares/` — auth (`authMiddleware.ts`), error handling (`errorMiddleware.ts`), rate limiting (`rateLimiter.ts`), request ID (`requestId.ts`), ObjectId validation (`validateObjectId.ts`)
 - `src/validations/` — Zod schemas for request validation
-- `src/utils/` — `asyncHandler` (wraps async routes + creates child Pino logger with `{ task, requestId }`, logs "started"/"completed"/"failed" per handler), `customError` (base `CustomError` class + 4 subclasses with `statusCode` and `errorCode`), `logger` (Pino structured logger — JSON in production, pretty-printed in dev, silent in test)
+- `src/utils/` — `asyncHandler` (wraps async routes + creates child Pino logger with `{ task, requestId }`, logs "started"/"completed"/"failed" per handler), `customError` (base `CustomError` class + 5 subclasses with `statusCode` and `errorCode`), `logger` (Pino structured logger — JSON in production, pretty-printed in dev, silent in test)
 - `src/constants/` — `httpStatusCodes.ts` exports `HTTP_STATUS` enum and `MESSAGES` map used throughout controllers and error classes
 - `src/@types/` — Express type augmentation (`req.user`)
 - `src/seeds/` — seed script for development data
@@ -67,15 +67,24 @@ Base path: `/api/v1/`
 | POST | `/api/v1/auth/login` | No (rate-limited: 20 req/15min) | Login, returns JWT |
 | GET | `/api/v1/auth/profile` | JWT | Get own profile |
 | POST | `/api/v1/mood` | JWT | Create mood log |
-| GET | `/api/v1/mood` | JWT | List logs (paginated, filterable by date range and mood) |
-| GET | `/api/v1/mood/stats` | JWT | Aggregated stats (two parallel aggregation pipelines) |
+| GET | `/api/v1/mood` | JWT | List logs (Zod-validated query: `page` ≥1, `limit` 1–100, `startDate`/`endDate` dates, `mood` string) |
+| GET | `/api/v1/mood/stats` | JWT | Aggregated stats (`days` 1–365, default 30; two parallel aggregation pipelines) |
 | GET | `/api/v1/mood/:id` | JWT | Get single log |
 | PUT | `/api/v1/mood/:id` | JWT | Update log |
 | DELETE | `/api/v1/mood/:id` | JWT | Delete log |
+| GET | `/api/v1/admin/users` | JWT + admin | List users (search is literal, ≤100 chars; `isPro=false` means "not true") |
+| PATCH | `/api/v1/admin/users/:id` | JWT + admin | Update role / isPro / name |
+| DELETE | `/api/v1/admin/users/:id` | JWT + admin | Soft-delete |
+
+Query strings are validated with Zod in the controller like bodies are — never `parseInt(req.query.x)`. Invalid input is a 400 with field-level errors, and operator objects (`mood[$ne]=x`) never reach MongoDB. Mood `date` may not be more than one day in the future.
 
 ### Auth
 
-Stateless JWT — Bearer token in `Authorization` header, 7-day expiry. `authMiddleware.ts` verifies token, fetches user from DB (excluding password via `.select("-password")`), and attaches to `req.user`. Three distinct failure paths: missing/malformed header, valid token but deleted user, invalid/expired token.
+Stateless JWT — Bearer token in `Authorization` header, 7-day expiry. `authMiddleware.ts` verifies token, fetches the user via `userRepository.findByIdSecure()` (excludes password and soft-deleted users), and attaches to `req.user`. Three distinct failure paths: missing/malformed header, valid token but user missing or soft-deleted, invalid/expired token. Login uses `findActiveByEmail`, so a soft-deleted user gets the same "Invalid email or password" as a wrong password. Emails are trimmed and lower-cased (Zod schemas + model), so they're case-insensitive.
+
+### Admin rules
+
+`requireAdmin` answers a logged-in non-admin with **403** (`ForbiddenError`), not 401, so the client doesn't log them out. `admin.service.ts` enforces: no changing your own role, no deleting yourself, and never removing the last active admin (`countActiveAdmins`). Services take `AdminAction { actorId, targetId }`; ids are compared case-insensitively. Soft-deleted users are excluded everywhere via `ACTIVE_USER_FILTER`.
 
 ### Rate Limiting
 
@@ -92,7 +101,8 @@ Two rate limiters in `middlewares/rateLimiter.ts`:
 
 Custom error classes extend `CustomError` in `utils/customError.ts`:
 - `BadRequestError` (400, `BAD_REQUEST`)
-- `UnauthorizedError` (401, `UNAUTHORIZED`)
+- `UnauthorizedError` (401, `UNAUTHORIZED`) — not authenticated
+- `ForbiddenError` (403, `FORBIDDEN`) — authenticated but not allowed
 - `NotFoundError` (404, `NOT_FOUND`) — accepts resource name and optional ID
 - `ConflictError` (409, `CONFLICT`)
 
@@ -105,7 +115,7 @@ Generic `BaseRepository<TDocument>` in `repositories/baseRepository.ts` provides
 - `findById(id)`, `findOne(filter)`, `create(data)`, `updateById(id, data)`, `deleteById(id)`, `exists(filter)`
 
 Collection-specific repositories extend the base:
-- **UserRepository** — adds `findByEmail(email)`, `findByIdSecure(id)` (excludes password)
+- **UserRepository** — adds `findByEmail(email)` (any account, so deleted users' emails stay taken), `findActiveByEmail(email)` (login), `findByIdSecure(id)` (active, excludes password), `findWeeklyAnalysisRecipients()` (active Pro users), `countActiveAdmins({ excludingId })`. Exports `ACTIVE_USER_FILTER`, the single definition of "not soft-deleted".
 - **MoodLogRepository** — adds `findByUserAndId()`, `updateByUserAndId()`, `deleteByUserAndId()` (ownership-scoped), `getStatsByUser()` (aggregation pipelines)
 
 Shared types in `repositories/types.ts`: `QueryOptions<TFilter>`, `PaginatedResult<T>`, `AggregatedStats`.
@@ -118,7 +128,7 @@ To add a new collection (e.g., Message): create model, then `class MessageReposi
 1. Numeric averages: intensity, energy level, sleep hours, sleep quality, total count
 2. Mood breakdown: count per mood type (returns `Record<string, number>`)
 
-Both are scoped to user + configurable day window (default 30 days). The service (`getMoodStatsService`) calls the repository method and formats the result.
+Both are scoped to user + configurable day window (default 30 days), bounded above by now so future-dated legacy logs don't count. The service (`getMoodStatsService`) calls the repository method and formats the result.
 
 ## Testing
 
@@ -126,8 +136,9 @@ Uses **mongodb-memory-server** — no external DB required.
 
 - `__tests__/env-setup.ts` — injects test env vars before module loading (Jest `setupFiles`). Critical so `config/env.ts` gets valid test vars without a real `.env` file.
 - `__tests__/setup.ts` — MongoMemoryServer lifecycle. `afterEach` drops all collections for test isolation. `afterAll` shuts down in-memory server.
-- `__tests__/helpers.ts` — shared supertest `request`, `createAuthenticatedUser()`, `validMoodLog` fixture
-- `auth.test.ts` / `mood.test.ts` — integration tests (HTTP via supertest against the real Express app)
+- `__tests__/helpers.ts` — shared supertest `request`, `createAuthenticatedUser()`, `createAdminUser()`, `makeAdmin()`, `validMoodLog` fixture. `createAuthenticatedUser()` inserts the user and signs the token directly instead of calling `/auth/register`: the auth rate limiter (20 req/15 min) would otherwise 429 files that need many users. Each test file gets a fresh app and limiter, so put tests that hit auth endpoints heavily in their own file.
+- `auth.test.ts`, `emailCase.test.ts`, `mood.test.ts`, `moodQuery.test.ts`, `admin.test.ts` — integration tests (HTTP via supertest against the real Express app)
+- `weeklyAnalysisJob.test.ts` — runs `runWeeklyAnalysisJob()` with the AI and email services mocked
 - `validation.test.ts` — unit tests for Zod schemas (pure validation, no DB/HTTP)
 - Jest config (`jest.config.ts`): `preset: ts-jest`, 30-second timeout for slow in-memory DB startup, `silent: true` suppresses console noise. Coverage excludes `__tests__/`, `@types/`, and `seeds/`.
 - **Coverage**: `npm run test:coverage` generates reports in `coverage/` (text + lcov). Thresholds: 50% branches, 60% functions/lines/statements.
@@ -243,7 +254,8 @@ The GitHub Actions CI pipeline (`ci.yml`) runs on push/PR to `main`:
 1. Check that the client sends `Authorization: Bearer <token>` header (not just `<token>`)
 2. Verify `JWT_SECRET` in `.env` hasn't changed since the token was issued
 3. Check token expiry (7 days)
-4. Check if the user was deleted from DB (auth middleware does `userRepository.findByIdSecure()`)
+4. Check if the user was deleted or soft-deleted (`isDeleted: true`) — auth middleware does `userRepository.findByIdSecure()`, which ignores both
+5. If it's only `/api/v1/admin/*`: that's a 403 for non-admins, not a 401 — check the user's `role`
 
 ### Mood creation returns 400
 1. Check Zod validation errors in the response `errors` array — each entry has `field` and `message`
@@ -251,7 +263,7 @@ The GitHub Actions CI pipeline (`ci.yml`) runs on push/PR to `main`:
 3. Tag fields must be `string[]`, not comma-separated strings
 
 ### Stats endpoint returns empty data
-1. Check the `days` query parameter — defaults to 30. If all logs are older, the aggregation finds nothing.
+1. Check the `days` query parameter — defaults to 30, must be 1–365. If all logs are older (or dated in the future), the aggregation finds nothing.
 2. Verify the user has mood logs (empty `moodBreakdown` and zero `totalLogs` means no matching data)
 3. Check that the date filter uses `$gte` correctly — the start date is calculated server-side as `now - days`
 
