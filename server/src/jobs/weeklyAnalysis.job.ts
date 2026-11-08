@@ -12,13 +12,9 @@ async function run(): Promise<void> {
   const jobLogger = logger.child({ job: JOB_NAME });
   jobLogger.info('Job started');
 
-  const { data: users, total } = await userRepository.findAll({
-    filter: { isPro: true },
-    select: ['_id', 'name', 'email'],
-    pagination: { skip: 0, limit: 10_000 },
-  });
+  const users = await userRepository.findWeeklyAnalysisRecipients();
 
-  jobLogger.info({ totalUsers: total }, 'Processing users');
+  jobLogger.info({ totalUsers: users.length }, 'Processing users');
 
   let succeeded = 0;
   let insufficient = 0;
