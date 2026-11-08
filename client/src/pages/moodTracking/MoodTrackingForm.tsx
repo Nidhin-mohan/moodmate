@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm, Controller, type FieldErrors } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -120,6 +120,7 @@ const fieldLabel = "text-sm font-medium text-muted-foreground";
 export default function MoodTrackingForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const moodGridRef = useRef<HTMLDivElement>(null);
 
   const {
     register,
@@ -159,6 +160,10 @@ export default function MoodTrackingForm() {
   const onInvalid = (formErrors: FieldErrors<MoodFormData>) => {
     if (formErrors.mood) {
       showToast.error("Please select a mood before saving your check-in.");
+      // The mood picker is buttons, not a registered input, so react-hook-form
+      // can't focus it for us.
+      moodGridRef.current?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+      moodGridRef.current?.querySelector("button")?.focus();
       return;
     }
     const [field, error] = Object.entries(formErrors)[0] ?? [];
@@ -219,7 +224,7 @@ export default function MoodTrackingForm() {
           </h2>
 
           {/* Parent Mood Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+          <div ref={moodGridRef} className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
             {MOOD_OPTIONS.map((m) => {
               const isSelected = selectedMoodLabel === m.label;
               return (

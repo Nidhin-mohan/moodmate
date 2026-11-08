@@ -64,12 +64,24 @@ describe("MoodTrackingForm", () => {
     expect(createMoodLog).not.toHaveBeenCalled();
   });
 
-  it("still asks for a mood when none is selected", async () => {
+  it("still asks for a mood when none is selected, and moves focus to the mood picker", async () => {
     renderForm();
 
     await userEvent.click(screen.getByRole("button", { name: "Save Check-in" }));
 
     await waitFor(() => expect(showToast.error).toHaveBeenCalled());
     expect(vi.mocked(showToast.error).mock.calls[0][0]).toMatch(/select a mood/i);
+    expect(screen.getByRole("button", { name: "Happy" })).toHaveFocus();
+  });
+
+  it("moves focus to an invalid exercise-minutes field", async () => {
+    renderForm();
+
+    await userEvent.click(screen.getByRole("button", { name: "Happy" }));
+    await userEvent.click(screen.getByRole("switch"));
+    await userEvent.type(screen.getByPlaceholderText("e.g. 30"), "-5");
+    await userEvent.click(screen.getByRole("button", { name: "Save Check-in" }));
+
+    await waitFor(() => expect(screen.getByPlaceholderText("e.g. 30")).toHaveFocus());
   });
 });
