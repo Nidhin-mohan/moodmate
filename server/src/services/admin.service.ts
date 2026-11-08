@@ -1,5 +1,5 @@
 import { IUser } from '../models/userModel';
-import { NotFoundError } from '../utils/customError';
+import { BadRequestError, NotFoundError } from '../utils/customError';
 import { userRepository } from '../repositories/userRepository';
 import type { ListUsersQuery, UpdateUserInput } from '../validations/adminValidation';
 
@@ -96,10 +96,17 @@ export async function listUsersService(query: ListUsersQuery): Promise<ListUsers
   };
 }
 
+// An admin can never demote or delete themselves. Because the acting admin always
+// stays an admin, this also guarantees at least one admin remains.
 export async function updateUserService(
+  actorId: string,
   userId: string,
   updates: UpdateUserInput,
 ): Promise<AdminUserView> {
+  if (actorId === userId && updates.role !== undefined && updates.role !== 'admin') {
+    throw new BadRequestError('You cannot change your own role');
+  }
+
   const exists = await userRepository.exists({ _id: userId } as Parameters<
     typeof userRepository.exists
   >[0]);
@@ -123,7 +130,14 @@ export async function updateUserService(
   return toAdminView(updated);
 }
 
-export async function softDeleteUserService(userId: string): Promise<AdminUserView> {
+export async function softDeleteUserService(
+  actorId: string,
+  userId: string,
+): Promise<AdminUserView> {
+  if (actorId === userId) {
+    throw new BadRequestError('You cannot delete your own account');
+  }
+
   const user = await userRepository.findById(userId);
   if (!user) throw new NotFoundError('User', userId);
   if (user.isDeleted) throw new NotFoundError('User', userId);

@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { showToast } from "@/utils/toast";
+import { useAuth } from "@/context/AuthContext";
 import { deleteUser, listUsers, updateUser } from "@/services/adminService";
 import type { AdminUser, ListUsersParams, UpdateUserPayload } from "@/types/admin";
 import type { UserRole } from "@/types/auth";
@@ -52,6 +53,7 @@ interface EditDraft {
 const LIMIT = 20;
 
 export default function AdminUsers() {
+  const { user: me } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -327,6 +329,8 @@ export default function AdminUsers() {
                   : users.map((u) => {
                       const isEditing = editingId === u._id;
                       const isDeleting = deletingId === u._id;
+                      // The server refuses self-demotion and self-deletion; mirror that here.
+                      const isSelf = u._id === me?.userId;
                       return (
                         <tr
                           key={u._id}
@@ -339,6 +343,11 @@ export default function AdminUsers() {
                           <td className="px-4 py-3">
                             <div className="font-medium text-foreground flex items-center gap-1.5">
                               {u.name}
+                              {isSelf && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/15 text-primary font-medium">
+                                  You
+                                </span>
+                              )}
                               {u.isDeleted && (
                                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/15 text-destructive font-medium">
                                   deleted
@@ -357,8 +366,12 @@ export default function AdminUsers() {
                               <Select
                                 value={editDraft.role}
                                 onValueChange={(v) => setEditDraft((d) => ({ ...d, role: v as UserRole }))}
+                                disabled={isSelf}
                               >
-                                <SelectTrigger className="h-8 w-32 text-xs">
+                                <SelectTrigger
+                                  className="h-8 w-32 text-xs"
+                                  title={isSelf ? "You can't change your own role" : undefined}
+                                >
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -462,7 +475,7 @@ export default function AdminUsers() {
                                   <Pencil size={13} />
                                   Edit
                                 </Button>
-                                {!u.isDeleted && (
+                                {!u.isDeleted && !isSelf && (
                                   <Button
                                     size="sm"
                                     variant="ghost"
