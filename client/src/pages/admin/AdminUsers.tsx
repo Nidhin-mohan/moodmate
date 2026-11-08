@@ -52,6 +52,12 @@ interface EditDraft {
 
 const LIMIT = 20;
 
+// On narrow screens the table scrolls sideways. Pin who-the-row-is (Name) and
+// what-you-can-do (Actions) so editing never hides either. Opaque bg so the
+// scrolling cells don't show through; from md up there's room, so unpin.
+const STICKY_LEFT = "sticky left-0 z-10 bg-card md:static md:bg-transparent";
+const STICKY_RIGHT = "sticky right-0 z-10 bg-card md:static md:bg-transparent";
+
 export default function AdminUsers() {
   const { user: me } = useAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -218,7 +224,7 @@ export default function AdminUsers() {
               User Management
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {total > 0 ? `${total} user${total !== 1 ? "s" : ""}` : ""}
+              {loading || loadError ? "" : `${total} user${total !== 1 ? "s" : ""}`}
             </p>
           </div>
         </div>
@@ -320,9 +326,11 @@ export default function AdminUsers() {
                     <th
                       key={h}
                       className={`px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider ${
+                        i === 0 ? STICKY_LEFT :
                         i === 1 ? "hidden sm:table-cell" :
                         i === 4 ? "hidden lg:table-cell" :
-                        i === 5 ? "hidden md:table-cell" : ""
+                        i === 5 ? "hidden md:table-cell" :
+                        i === 6 ? STICKY_RIGHT : ""
                       }`}
                     >
                       {h}
@@ -347,7 +355,7 @@ export default function AdminUsers() {
                           }`}
                         >
                           {/* Name */}
-                          <td className="px-4 py-3">
+                          <td className={`px-4 py-3 ${STICKY_LEFT}`}>
                             <div className="font-medium text-foreground flex items-center gap-1.5">
                               {u.name}
                               {isSelf && (
@@ -422,7 +430,7 @@ export default function AdminUsers() {
                           </td>
 
                           {/* Actions */}
-                          <td className="px-4 py-3 text-right">
+                          <td className={`px-4 py-3 text-right ${STICKY_RIGHT}`}>
                             {isDeleting ? (
                               <div className="flex items-center justify-end gap-2">
                                 <span className="text-xs text-destructive mr-1">Delete?</span>

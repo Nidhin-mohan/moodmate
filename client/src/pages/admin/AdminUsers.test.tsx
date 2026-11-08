@@ -39,6 +39,21 @@ vi.mock("@/services/adminService", () => ({
 
 const rowFor = async (name: string) => (await screen.findByText(name)).closest("tr") as HTMLElement;
 
+describe("AdminUsers count", () => {
+  it('says "0 users" when a search matches nobody', async () => {
+    vi.mocked(listUsers).mockResolvedValueOnce({
+      success: true,
+      data: [],
+      total: 0,
+      page: 1,
+      pages: 1,
+    });
+    render(<AdminUsers />);
+
+    expect(await screen.findByText("0 users")).toBeInTheDocument();
+  });
+});
+
 describe("AdminUsers loading errors", () => {
   it("drops the previous results when a later search fails", async () => {
     render(<AdminUsers />);
