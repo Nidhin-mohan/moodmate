@@ -32,6 +32,8 @@ npm run dev          # vite dev server with HMR
 npm run build        # tsc -b && vite build
 npm run lint         # eslint
 npm run preview      # vite preview (serve production build)
+npm test             # vitest run (jsdom + React Testing Library, src/**/*.test.{ts,tsx})
+npm run test:watch   # vitest watch mode
 ```
 
 ### Docker (from root)
@@ -121,6 +123,29 @@ Both client and server use `@/` → `./src/`. Client resolves via Vite config (`
 - **Server**: `target: ES2020`, `module: commonjs`, `strict: true`, `outDir: ./dist`, `rootDir: ./src`, `sourceMap: true`, `esModuleInterop: true`.
 - **Client**: Project references (`tsconfig.app.json` + `tsconfig.node.json`). Path alias `@/` → `./src/` in `compilerOptions.paths`.
 
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `Nidhin-mohan/moodmate`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root, covering client and server. See `docs/agents/domain.md`.
+
+### Flow
+
+`/grill-with-docs` → `/to-spec` → `/to-tickets` → `/implement` per ticket (`/clear` between) → `ui-tester` agent for UI tickets → `/ship`. Human guide: `agentic-flow.html`.
+
+- **Plan challenge.** When a spec rests on claims about how existing code behaves, dispatch one fresh read-only `Plan` agent with the spec and have it verify each claim against the code, reporting BLOCKERS (file:line), GAPS and CONFIRMED. Resolve blockers with the user before `/to-tickets`.
+- **Client ↔ server contract (review standard).** Every client service path must exist in the server route table above, relative to the `/api/v1` base URL. Request payloads must satisfy the server's Zod schema (tags as `string[]`, numeric ranges), and the client types must match the response shape `{ success, message, data }`. `/code-review` checks this on any diff touching `client/src/services/` or `server/src/routes|validations/`.
+- **Verification.** Server: Jest. Client: Vitest + React Testing Library. Real browser: the `ui-tester` agent (Playwright MCP); its test logins live in the gitignored `.claude/test-fixtures.local.md`. Never infer a UI PASS from reading code.
+- **Shipping.** `/ship` pushes, opens the PR, waits for CI and **asks before merging**: merging to `main` deploys. Deploy targets: `docs/agents/deploy.md`.
+
 ## CI/CD
 
 Three GitHub Actions workflows in `.github/workflows/`:
@@ -139,7 +164,7 @@ Runs two parallel jobs:
 **Client job** (`working-directory: client`):
 1. Checkout → Node 24 setup
 2. Cache `~/.npm` (key: `client-npm-${{ hashFiles('client/package-lock.json') }}`)
-3. `npm ci` → `npm run lint` → `npm run build`
+3. `npm ci` → `npm run lint` → `npm test` → `npm run build`
 
 ### CD Backend (`cd-backend.yml`)
 **Triggers**: Push to `main` where paths include `server/**` or `docker-compose.prod.yml`.
@@ -180,6 +205,10 @@ Server tests use **mongodb-memory-server** for isolated in-memory MongoDB — no
 - Tests: `auth.test.ts` (integration), `mood.test.ts` (integration), `validation.test.ts` (unit/Zod, no DB/HTTP).
 - Jest config (`jest.config.ts`): `preset: ts-jest`, 30-second timeout for slow in-memory DB startup, `silent: true` suppresses console noise. Coverage excludes `__tests__/`, `@types/`, and `seeds/`.
 - **Coverage**: `npm run test:coverage` generates reports in `coverage/` (text + lcov). Thresholds: 50% branches, 60% functions/lines/statements.
+
+Client tests use **Vitest** (config in `client/vite.config.ts`, `test` block) with jsdom and React Testing Library.
+- `src/test/setup.ts`: registers jest-dom matchers, runs RTL `cleanup` and clears localStorage after each test.
+- Tests sit next to the code as `*.test.ts(x)`. Mock the Axios instance with `vi.mock("@/api", …)`. `restoreMocks: true` resets mocks between tests, so don't add a `beforeEach(mockReset)`; it breaks `mockRejectedValue`.
 
 ## Environment Variables
 

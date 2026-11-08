@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MoodMate Agentic Flow</title>
+<style>
+  :root {
+    --bg: #fbfaf7;
+    --surface: #ffffff;
+    --ink: #1d1c1a;
+    --muted: #6b675f;
+    --line: #e6e2d9;
+    --accent: #2f6f5e;
+    --accent-soft: #e4f0ec;
+    --warn: #9a5b13;
+    --warn-soft: #fbf0e1;
+    --code-bg: #f3f1ec;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161614;
+      --surface: #1f1f1c;
+      --ink: #ecebe6;
+      --muted: #a29e94;
+      --line: #34332e;
+      --accent: #6fc2a8;
+      --accent-soft: #1e332d;
+      --warn: #e2a85c;
+      --warn-soft: #382a18;
+      --code-bg: #2a2a26;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 48px 20px 96px; }
+  header p.lede { font-size: 1.1rem; color: var(--muted); max-width: 640px; margin-top: 8px; }
+  h1 { font-size: 2.1rem; line-height: 1.15; margin: 0; letter-spacing: -0.02em; }
+  h2 { font-size: 1.35rem; margin: 56px 0 12px; letter-spacing: -0.01em; }
+  h3 { font-size: 1.02rem; margin: 0 0 4px; }
+  p { margin: 8px 0; }
+  a { color: var(--accent); }
+  code, kbd {
+    font: 0.88em/1.4 ui-monospace, "Cascadia Code", Consolas, monospace;
+    background: var(--code-bg);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  nav.toc {
+    display: flex; flex-wrap: wrap; gap: 6px 14px;
+    margin: 28px 0 0; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    font-size: 0.9rem;
+  }
+  nav.toc a { text-decoration: none; color: var(--muted); }
+  nav.toc a:hover { color: var(--accent); }
+
+  /* the pipeline strip */
+  .pipeline {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;
+    margin: 24px 0 8px; counter-reset: step;
+  }
+  .stage {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px;
+    position: relative;
+  }
+  .stage::before {
+    counter-increment: step; content: counter(step);
+    display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent); font-size: 0.78rem; font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .stage .cmd { font-family: ui-monospace, Consolas, monospace; font-weight: 600; font-size: 0.92rem; }
+  .stage .out { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+  .stage.loop { border-style: dashed; }
+  .stage.planned { opacity: 0.75; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; margin: 12px 0;
+  }
+  .step { display: grid; grid-template-columns: 34px 1fr; gap: 14px; margin: 18px 0; }
+  .step .n {
+    width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--accent); color: var(--bg); font-weight: 700; font-size: 0.9rem;
+  }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.85rem; color: var(--muted); margin-top: 6px; }
+  .meta b { color: var(--ink); font-weight: 600; }
+
+  .table-wrap { overflow-x: auto; margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+
+  pre {
+    background: var(--code-bg); border-radius: 8px; padding: 14px 16px; overflow-x: auto;
+    font: 0.86rem/1.55 ui-monospace, "Cascadia Code", Consolas, monospace; margin: 10px 0; position: relative;
+  }
+  pre code { background: none; padding: 0; }
+  .copy {
+    position: absolute; top: 8px; right: 8px; font: 0.75rem system-ui, sans-serif;
+    background: var(--surface); color: var(--muted); border: 1px solid var(--line); border-radius: 6px;
+    padding: 3px 8px; cursor: pointer;
+  }
+  .copy:hover { color: var(--accent); }
+
+  .tag { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 1px 8px; border-radius: 99px; vertical-align: 2px; }
+  .tag.ready { background: var(--accent-soft); color: var(--accent); }
+  .tag.planned { background: var(--warn-soft); color: var(--warn); }
+
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+  .callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  ul { padding-left: 20px; }
+  li { margin: 4px 0; }
+  footer { margin-top: 64px; color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>MoodMate agentic flow</h1>
+  <p class="lede">How to take a piece of work from an idea in your head to code running in production, using Claude Code skills in this repo. One main session drives it; a subagent is used only where it isolates noisy work.</p>
+  <nav class="toc">
+    <a href="#start">Where to start</a>
+    <a href="#flow">Main flow</a>
+    <a href="#ticket">Per-ticket loop</a>
+    <a href="#ship">Shipping to prod</a>
+    <a href="#boundaries">Context hygiene</a>
+    <a href="#other">Other entry points</a>
+    <a href="#status">What's set up</a>
+    <a href="#files">Files</a>
+  </nav>
+</header>
+
+<div class="pipeline" aria-label="Main flow at a glance">
+  <div class="stage"><div class="cmd">/grill-with-docs</div><div class="out">Interview. Writes CONTEXT.md + ADRs</div></div>
+  <div class="stage"><div class="cmd">/to-spec</div><div class="out">Spec as a GitHub issue</div></div>
+  <div class="stage"><div class="cmd">/to-tickets</div><div class="out">Vertical-slice issues with blockers</div></div>
+  <div class="stage loop"><div class="cmd">/implement #n</div><div class="out">TDD → code review → commit. Repeat per ticket</div></div>
+  <div class="stage"><div class="cmd">ui-tester</div><div class="out">Browser check via Playwright MCP</div></div>
+  <div class="stage"><div class="cmd">/ship</div><div class="out">PR → CI → you approve merge → CD → prod smoke</div></div>
+</div>
+
+<!-- ───────────────────────────── -->
+<h2 id="start">Where to start</h2>
+<p>Pick the row that matches what's in front of you.</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>You have…</th><th>Type</th><th>Then</th></tr></thead>
+  <tbody>
+    <tr><td>A small change you can hold in one session</td><td><code>/grill-with-docs</code></td><td><code>/implement</code> in the same session. Skip spec and tickets.</td></tr>
+    <tr><td>A feature that will take several sessions</td><td><code>/grill-with-docs</code></td><td><code>/to-spec</code> → <code>/to-tickets</code> → <code>/implement</code> per ticket</td></tr>
+    <tr><td>A bug that resists a first look</td><td><code>/diagnosing-bugs</code></td><td>Builds a failing repro first, then fixes with a regression test</td></tr>
+    <tr><td>Raw issues someone else filed</td><td><code>/triage</code></td><td>Turns them into <code>ready-for-agent</code> issues for <code>/implement</code></td></tr>
+    <tr><td>A huge, foggy effort with no visible path</td><td><code>/wayfinder</code></td><td>Resolves decisions first, then hands off to <code>/to-spec</code></td></tr>
+    <tr><td>A design question you can't settle on paper</td><td><code>/prototype</code></td><td>Throwaway code answers it; fold the answer back into the grilling</td></tr>
+    <tr><td>Spare time, no feature</td><td><code>/improve-codebase-architecture</code></td><td>Pick a candidate and take it to <code>/grill-with-docs</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ───────────────────────────── -->
+<h2 id="flow">The main flow, step by step</h2>
+<div class="callout">Keep steps 1–3 in <b>one unbroken session</b>. Don't <code>/clear</code> or <code>/compact</code> until the tickets exist, so the spec and tickets build on the same thinking as the interview.</div>
+
+<div class="step"><div class="n">1</div><div>
+  <h3>Sharpen the idea: <code>/grill-with-docs</code></h3>
+  <p>Say what you want in a sentence or two. Claude interviews you one question at a time until every decision is settled. Facts it looks up in the code itself; decisions it asks you about.</p>
+  <div class="meta"><span><b>Produces</b> <code>CONTEXT.md</code> glossary terms, ADRs in <code>docs/adr/</code></span><span><b>You do</b> answer questions, push back</span></div>
+  <pre><code>/grill-with-docs let users export their mood history as CSV from the history page</code></pre>
+</div></div>
+
+<div class="step"><div class="n">2</div><div>
+  <h3>Write it down: <code>/to-spec</code></h3>
+  <p>Turns the conversation into a spec and publishes it as a GitHub issue. If the spec relies on claims about how existing code behaves, ask for a <b>plan challenge</b>: a fresh read-only agent verifies each claim against the code and reports blockers, gaps and what it confirmed.</p>
+  <div class="meta"><span><b>Produces</b> a spec issue on GitHub</span></div>
+  <pre><code>/to-spec
+then: challenge this spec with a fresh Plan agent before we slice it</code></pre>
+</div></div>
+
+<div class="step"><div class="n">3</div><div>
+  <h3>Slice it: <code>/to-tickets</code></h3>
+  <p>Splits the spec into tracer-bullet tickets. Each ticket is a thin vertical slice (route → service → repository → client service → UI) that works end to end on its own, with blocking links between tickets.</p>
+  <div class="meta"><span><b>Produces</b> GitHub issues labelled <code>ready-for-agent</code>, with native "blocked by" links</span></div>
+</div></div>
+
+<div class="step"><div class="n">4</div><div>
+  <h3>Build each ticket: <code>/implement</code></h3>
+  <p>See the per-ticket loop below. Pick any ticket whose blockers are closed.</p>
+</div></div>
+
+<!-- ───────────────────────────── -->
+<h2 id="ticket">The per-ticket loop</h2>
+<div class="grid2">
+  <div class="card">
+    <h3>Run it</h3>
+<pre><code>/clear
+/implement #42</code></pre>
+    <p><code>/clear</code> first. Each ticket is self-contained, so the previous ticket's context only costs you.</p>
+  </div>
+  <div class="card">
+    <h3>What happens inside</h3>
+    <ul>
+      <li><b>/tdd</b>: one red → green slice at a time</li>
+      <li><b>/code-review</b>: Standards (this repo's CLAUDE.md) and Spec (the ticket)</li>
+      <li>Commit on the feature branch</li>
+    </ul>
+  </div>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Layer</th><th>Tested by</th><th>Command</th></tr></thead>
+  <tbody>
+    <tr><td>Server (routes, services, repos)</td><td>Jest + supertest + mongodb-memory-server <span class="tag ready">ready</span></td><td><code>npm --prefix server test</code></td></tr>
+    <tr><td>Client (components, services)</td><td>Vitest + React Testing Library <span class="tag ready">ready</span></td><td><code>npm --prefix client test</code></td></tr>
+    <tr><td>Real UI in a browser</td><td><code>ui-tester</code> subagent via Playwright MCP <span class="tag ready">ready</span></td><td><code>use the ui-tester agent to check #42</code> (dev servers must be running)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout warn"><b>Watch the client ↔ server seam.</b> Client service paths and payload types must match the server routes and Zod schemas. The client base URL already includes <code>/api/v1</code>, and tag fields must be <code>string[]</code>. Both mismatches have bitten this repo before (see CLAUDE.md → Lessons Learned).</div>
+
+<!-- ───────────────────────────── -->
+<h2 id="ship">Shipping to production</h2>
+<p><b>Merging to <code>main</code> is the deploy.</b> Run <code>/ship</code> when the tickets are done and committed. It stops and asks before the one step you can't undo.</p>
+<pre><code>/ship</code></pre>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Step</th><th>What <code>/ship</code> does</th></tr></thead>
+  <tbody>
+    <tr><td>1. Preflight</td><td>Checks you're on a feature branch, up to date with main, and runs lint + tests for whichever of server/client changed</td></tr>
+    <tr><td>2. PR</td><td>Pushes and opens a PR to main with <code>Closes #n</code> for the tickets</td></tr>
+    <tr><td>3. CI</td><td>Waits for <code>ci.yml</code>. If it's red: reads the log and fixes or reports. Never merges on red.</td></tr>
+    <tr><td>4. Merge gate</td><td><b>Asks you</b>, naming what will deploy (backend, frontend, or both)</td></tr>
+    <tr><td>5. Deploy</td><td>Watches <code>cd-backend.yml</code> (ECR → EC2) and/or <code>cd-frontend.yml</code> (S3 → CloudFront)</td></tr>
+    <tr><td>6. Smoke</td><td>Checks prod <code>/health</code>, then runs <code>ui-tester</code> read-only on the changed screens</td></tr>
+    <tr><td>7. If smoke fails</td><td>Asks: revert PR, fix forward via <code>/diagnosing-bugs</code>, or leave it</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="callout warn"><b>Needs the GitHub CLI.</b> Install it with <code>winget install --id GitHub.cli</code>, then type <code>! gh auth login</code> in Claude Code. The issue tracker skills need it too. On first run, <code>/ship</code> asks for your production URLs and saves them in <code>docs/agents/deploy.md</code>.</div>
+
+<!-- ───────────────────────────── -->
+<h2 id="boundaries">Context hygiene</h2>
+<p>Claude reasons best in roughly the first ~150k tokens of a session. Decide what to do with the context <b>at a phase boundary</b> (after grilling, after tickets, between tickets), never mid-phase.</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Option</th><th>Use when</th></tr></thead>
+  <tbody>
+    <tr><td><b>Continue</b></td><td>The next phase genuinely needs what's in context now (e.g. grill → spec → tickets)</td></tr>
+    <tr><td><code>/clear</code></td><td>Nothing here matters to what's next. Between tickets, every time.</td></tr>
+    <tr><td><code>/compact</code></td><td>The default when you're getting long but still need the gist</td></tr>
+    <tr><td>Subagent</td><td>A bounded side task whose output is noisy, like browser testing or a wide code search</td></tr>
+    <tr><td><code>/handoff</code></td><td>Moving to another directory, harness or person (e.g. going off to a prototype)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ───────────────────────────── -->
+<h2 id="other">Other useful skills</h2>
+<div class="grid2">
+  <div class="card"><h3><code>/tdd</code></h3><p>Build one concrete behaviour test-first, without a spec.</p></div>
+  <div class="card"><h3><code>/code-review</code></h3><p>Review a branch or PR against a fixed point, e.g. <code>/code-review since main</code>.</p></div>
+  <div class="card"><h3><code>/research</code></h3><p>Background agent reads primary sources and leaves a cited Markdown file.</p></div>
+  <div class="card"><h3><code>/wizard</code></h3><p>Generates a script for steps only you can do: AWS consoles, GitHub secrets.</p></div>
+  <div class="card"><h3><code>/retro</code></h3><p>Every ~5 features: look back at what went wrong and adjust the flow.</p></div>
+  <div class="card"><h3><code>/ask-matt</code></h3><p>Not sure which skill fits? Ask it.</p></div>
+</div>
+
+<!-- ───────────────────────────── -->
+<h2 id="status">What's set up</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Piece</th><th>Status</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Issue tracker config</td><td><span class="tag ready">ready</span></td><td>GitHub Issues, <code>docs/agents/issue-tracker.md</code></td></tr>
+    <tr><td>Triage labels</td><td><span class="tag ready">ready</span></td><td>Defaults in <code>docs/agents/triage-labels.md</code>; created on GitHub the first time a skill applies them</td></tr>
+    <tr><td>Domain docs</td><td><span class="tag ready">ready</span></td><td><code>CONTEXT.md</code> + <code>docs/adr/</code> created lazily by <code>/grill-with-docs</code></td></tr>
+    <tr><td>Server tests + CI/CD</td><td><span class="tag ready">ready</span></td><td>Jest in CI; CD to ECR/EC2 and S3/CloudFront</td></tr>
+    <tr><td>Playwright MCP</td><td><span class="tag ready">ready</span></td><td>Configured in <code>.mcp.json</code></td></tr>
+    <tr><td>Client tests (Vitest + RTL)</td><td><span class="tag ready">ready</span></td><td>Runs in CI; first tests cover <code>cn</code>, <code>signup</code>, <code>Button</code></td></tr>
+    <tr><td><code>ui-tester</code> agent</td><td><span class="tag ready">ready</span></td><td><code>.claude/agents/ui-tester.md</code>, ported from the PHS <code>flow-tester</code>. Logins in gitignored <code>.claude/test-fixtures.local.md</code></td></tr>
+    <tr><td><code>/ship</code> skill</td><td><span class="tag ready">ready</span></td><td><code>.claude/skills/ship/SKILL.md</code></td></tr>
+    <tr><td>GitHub CLI (<code>gh</code>)</td><td><span class="tag planned">to install</span></td><td>Required by <code>/ship</code>, <code>/to-tickets</code>, <code>/triage</code>. Run <code>winget install --id GitHub.cli</code>, then <code>gh auth login</code></td></tr>
+    <tr><td>Production URLs</td><td><span class="tag planned">to record</span></td><td><code>docs/agents/deploy.md</code>, filled in on the first <code>/ship</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ───────────────────────────── -->
+<h2 id="files">Where things live</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Path</th><th>What</th></tr></thead>
+  <tbody>
+    <tr><td><code>CLAUDE.md</code></td><td>Project rules every session loads; the <code>## Agent skills</code> section points at the files below</td></tr>
+    <tr><td><code>docs/agents/issue-tracker.md</code></td><td>How skills create, read, label and link GitHub issues</td></tr>
+    <tr><td><code>docs/agents/triage-labels.md</code></td><td>Triage role → label mapping</td></tr>
+    <tr><td><code>docs/agents/domain.md</code></td><td>How skills read <code>CONTEXT.md</code> and ADRs</td></tr>
+    <tr><td><code>CONTEXT.md</code></td><td>Domain glossary (mood log, intensity, …). Created by grilling.</td></tr>
+    <tr><td><code>docs/adr/</code></td><td>Hard-to-reverse decisions, one file each</td></tr>
+    <tr><td><code>docs/agents/deploy.md</code></td><td>Production URLs and which workflow deploys what</td></tr>
+    <tr><td><code>.claude/agents/ui-tester.md</code></td><td>The browser-testing subagent</td></tr>
+    <tr><td><code>.claude/skills/ship/SKILL.md</code></td><td>The <code>/ship</code> skill</td></tr>
+    <tr><td><code>.claude/test-fixtures.local.md</code></td><td>Test logins. Gitignored, never committed.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>Rules of thumb</h2>
+<ul>
+  <li>Don't skip the grilling. Ambiguity that survives it shows up later as rework.</li>
+  <li>One ticket per session. <code>/clear</code> between them.</li>
+  <li>A ticket is a vertical slice, not "the backend part" or "the frontend part".</li>
+  <li>"It compiles" is not "it works". Trust tests and observed browser behaviour, not code that looks right.</li>
+  <li>Claude never merges or pushes to <code>main</code> unasked. Merging is the deploy.</li>
+  <li>Edit <code>docs/agents/*.md</code> directly to change conventions; no need to re-run setup.</li>
+</ul>
+
+<footer>MoodMate · agentic flow guide · update this page when a <span class="tag planned">planned</span> piece lands.</footer>
+</div>
+
+<script>
+  document.querySelectorAll('pre').forEach(function (pre) {
+    var btn = document.createElement('button');
+    btn.className = 'copy';
+    btn.type = 'button';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', function () {
+      var text = pre.querySelector('code').innerText;
+      try {
+        navigator.clipboard.writeText(text).then(function () {
+          btn.textContent = 'Copied';
+          setTimeout(function () { btn.textContent = 'Copy'; }, 1200);
+        }, function () { btn.textContent = 'Select & copy'; });
+      } catch (e) { btn.textContent = 'Select & copy'; }
+    });
+    pre.appendChild(btn);
+  });
+</script>
+</body>
+</html>

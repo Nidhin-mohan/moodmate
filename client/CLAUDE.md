@@ -9,7 +9,11 @@ npm run dev          # vite dev server with HMR
 npm run build        # tsc -b && vite build (type-check + bundle)
 npm run lint         # eslint
 npm run preview      # vite preview (serve production build locally)
+npm test             # vitest run — jsdom + React Testing Library
+npm run test:watch   # vitest watch mode
 ```
+
+Tests live next to the code as `*.test.ts(x)`; setup in `src/test/setup.ts`. Mock the Axios instance with `vi.mock("@/api", …)`.
 
 ## Architecture Notes
 
