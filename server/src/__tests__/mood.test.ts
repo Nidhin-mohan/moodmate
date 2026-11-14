@@ -44,10 +44,46 @@ describe('Mood Log Endpoints', () => {
       expect(res.body.errors).toBeDefined();
     });
 
-    it('rejects missing required fields with 400', async () => {
-      const res = await authRequest().post('/api/v1/mood').send({ mood: 'happy' });
+    it('rejects a log without a mood with 400', async () => {
+      const res = await authRequest().post('/api/v1/mood').send({ intensity: 5 });
 
       expect(res.status).toBe(400);
+    });
+
+    // Quick log: only the mood is stored — nothing the user didn't report.
+    it('creates a mood-only log without inventing other values', async () => {
+      const res = await authRequest().post('/api/v1/mood').send({ mood: 'Sad' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.mood).toBe('Sad');
+      for (const field of ['intensity', 'energyLevel', 'sleepHours', 'sleepQuality', 'exercise']) {
+        expect(res.body.data).not.toHaveProperty(field);
+      }
+      expect(res.body.data.tagsPeople).toEqual([]);
+    });
+
+    it('still validates optional fields when they are sent', async () => {
+      const res = await authRequest().post('/api/v1/mood').send({ mood: 'Sad', sleepQuality: 9 });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('lets "add details" fill blanks later without touching what was saved', async () => {
+      const created = await authRequest()
+        .post('/api/v1/mood')
+        .send({ mood: 'Anxious', tagsPeople: ['Mom'] });
+      const id = created.body.data._id;
+
+      const res = await authRequest()
+        .put(`/api/v1/mood/${id}`)
+        .send({ intensity: 8, sleepHours: 5 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.intensity).toBe(8);
+      expect(res.body.data.sleepHours).toBe(5);
+      expect(res.body.data.mood).toBe('Anxious');
+      expect(res.body.data.tagsPeople).toEqual(['Mom']);
+      expect(res.body.data).not.toHaveProperty('exercise');
     });
   });
 
@@ -233,12 +269,53 @@ describe('Mood Log Endpoints', () => {
       expect(res.body.data).toHaveProperty('avgSleepHours');
     });
 
+    it('returns averages as numbers rounded to one decimal', async () => {
+      await authRequest()
+        .post('/api/v1/mood')
+        .send({ ...validMoodLog, intensity: 8 });
+      await authRequest()
+        .post('/api/v1/mood')
+        .send({ ...validMoodLog, intensity: 7 });
+
+      const res = await authRequest().get('/api/v1/mood/stats');
+
+      expect(res.body.data.avgIntensity).toBe(7.5);
+      expect(typeof res.body.data.avgSleepHours).toBe('number');
+    });
+
     it('returns empty stats when no logs exist', async () => {
       const res = await authRequest().get('/api/v1/mood/stats');
 
       expect(res.status).toBe(200);
       expect(res.body.data.totalLogs).toBe(0);
       expect(res.body.data.moodBreakdown).toEqual({});
+      expect(res.body.data.avgIntensity).toBeNull();
+    });
+
+    it('averages only recorded values, ignoring mood-only logs', async () => {
+      await authRequest()
+        .post('/api/v1/mood')
+        .send({ ...validMoodLog, intensity: 8 });
+      await authRequest().post('/api/v1/mood').send({ mood: 'Sad' });
+      await authRequest().post('/api/v1/mood').send({ mood: 'Sad' });
+
+      const res = await authRequest().get('/api/v1/mood/stats');
+
+      expect(res.body.data.totalLogs).toBe(3);
+      expect(res.body.data.avgIntensity).toBe(8);
+      expect(res.body.data.moodBreakdown).toEqual({ happy: 1, Sad: 2 });
+    });
+
+    it('returns null averages (not 0) when only mood-only logs exist', async () => {
+      await authRequest().post('/api/v1/mood').send({ mood: 'Neutral' });
+
+      const res = await authRequest().get('/api/v1/mood/stats');
+
+      expect(res.body.data.totalLogs).toBe(1);
+      expect(res.body.data.avgIntensity).toBeNull();
+      expect(res.body.data.avgEnergyLevel).toBeNull();
+      expect(res.body.data.avgSleepHours).toBeNull();
+      expect(res.body.data.avgSleepQuality).toBeNull();
     });
   });
 });

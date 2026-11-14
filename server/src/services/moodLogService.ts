@@ -1,5 +1,8 @@
 import { IMoodLog } from '../models/moodLogModel';
 import { NotFoundError } from '../utils/customError';
+import { escapeRegex } from '../utils/escapeRegex';
+
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 import { moodLogRepository, MoodLogFilter } from '../repositories/moodLogRepository';
 import type { QueryOptions } from '../repositories/types';
 import type {
@@ -16,15 +19,20 @@ interface PaginatedMoodResult {
   data: IMoodLog[];
 }
 
+// Averages are null when no log in the window recorded that field —
+// "no data" must never be reported as 0.
 interface MoodStats {
   period: string;
-  avgIntensity: string | number;
-  avgEnergyLevel: string | number;
-  avgSleepHours: string | number;
-  avgSleepQuality: string | number;
+  avgIntensity: number | null;
+  avgEnergyLevel: number | null;
+  avgSleepHours: number | null;
+  avgSleepQuality: number | null;
   totalLogs: number;
   moodBreakdown: Record<string, number>;
 }
+
+const round1 = (v: number | null | undefined): number | null =>
+  typeof v === 'number' ? Math.round(v * 10) / 10 : null;
 
 export const createMoodService = async (
   userId: string,
@@ -47,15 +55,18 @@ export const getAllMoodsService = async (
   // Build typed filter — service says WHAT it wants, repo handles HOW
   const filter: MoodLogFilter = { user: userId };
 
-  if (startDate || endDate) {
-    const dateFilter: { $gte?: Date; $lte?: Date } = {};
-    if (startDate) dateFilter.$gte = startDate;
-    if (endDate) dateFilter.$lte = endDate;
-    filter.date = dateFilter;
-  }
+  // Never list far-future legacy logs: new dates are capped at now + 1 day on create/update,
+  // so anything later is bad data (stats ignore it too). A tighter endDate still wins.
+  const latest = new Date(Date.now() + ONE_DAY_MS);
+  const dateFilter: { $gte?: Date; $lte: Date } = {
+    $lte: endDate && endDate < latest ? endDate : latest,
+  };
+  if (startDate) dateFilter.$gte = startDate;
+  filter.date = dateFilter;
 
+  // Moods are free strings and legacy data is lower-case ("happy"), so match case-insensitively.
   if (mood) {
-    filter.mood = mood;
+    filter.mood = new RegExp(`^${escapeRegex(mood)}$`, 'i');
   }
 
   // One call → gets data + total count. No hand-rolling Promise.all.
@@ -129,10 +140,10 @@ export const getMoodStatsService = async (userId: string, days: number): Promise
 
   return {
     period: `Last ${days} days`,
-    avgIntensity: stats?.avgIntensity?.toFixed(1) || 0,
-    avgEnergyLevel: stats?.avgEnergyLevel?.toFixed(1) || 0,
-    avgSleepHours: stats?.avgSleepHours?.toFixed(1) || 0,
-    avgSleepQuality: stats?.avgSleepQuality?.toFixed(1) || 0,
+    avgIntensity: round1(stats?.avgIntensity),
+    avgEnergyLevel: round1(stats?.avgEnergyLevel),
+    avgSleepHours: round1(stats?.avgSleepHours),
+    avgSleepQuality: round1(stats?.avgSleepQuality),
     totalLogs: stats?.totalLogs || 0,
     moodBreakdown,
   };

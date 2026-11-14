@@ -2,17 +2,16 @@ import mongoose from 'mongoose';
 import MoodLog from '../models/moodLogModel';
 
 // Seed data configuration
-const moods = ['happy', 'sad', 'anxious', 'calm', 'angry', 'excited', 'tired', 'neutral'];
+// The six moods the client's quick log offers (client mood catalogue).
+const moods = ['Happy', 'Excited', 'Neutral', 'Sad', 'Anxious', 'Angry'];
 
 const specificEmotions: Record<string, string[]> = {
-  happy: ['joyful', 'content', 'grateful', 'optimistic'],
-  sad: ['lonely', 'disappointed', 'melancholic', 'grief'],
-  anxious: ['worried', 'nervous', 'stressed', 'overwhelmed'],
-  calm: ['peaceful', 'relaxed', 'serene', 'balanced'],
-  angry: ['frustrated', 'irritated', 'resentful', 'annoyed'],
-  excited: ['enthusiastic', 'eager', 'thrilled', 'energized'],
-  tired: ['exhausted', 'drained', 'fatigued', 'sleepy'],
-  neutral: ['indifferent', 'meh', 'okay', 'stable'],
+  Happy: ['joyful', 'content', 'grateful', 'optimistic'],
+  Excited: ['enthusiastic', 'eager', 'thrilled', 'energized'],
+  Neutral: ['indifferent', 'meh', 'okay', 'stable'],
+  Sad: ['lonely', 'disappointed', 'melancholic', 'grief'],
+  Anxious: ['worried', 'nervous', 'stressed', 'overwhelmed'],
+  Angry: ['frustrated', 'irritated', 'resentful', 'annoyed'],
 };
 
 const people = ['family', 'friends', 'coworkers', 'partner', 'alone', 'strangers'];

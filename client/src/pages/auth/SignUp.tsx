@@ -1,17 +1,16 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
+import { AuthShell } from "@/components/layout/AuthShell";
+import { authInputClass, authLabelClass } from "@/components/layout/authStyles";
 import { signup } from "@/services/authServices";
 import { showToast } from "@/utils/toast";
-import { Loader2 } from "lucide-react";
 
 const SignUp = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -21,123 +20,80 @@ const SignUp = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     if (!formData.name || !formData.email || !formData.password) {
-      showToast.error("Please fill in all fields.");
+      setError("Please fill in your name, email and a password.");
       return;
     }
 
     setIsLoading(true);
-
     try {
       const response = await signup(formData);
-
       if (response.success) {
         showToast.success("Welcome to MoodMate! Please log in.");
         navigate("/login");
       } else {
-        showToast.error(response.message || "Registration failed. Try again.");
+        setError(response.message || "Registration failed. Please try again.");
       }
     } catch (err) {
-      showToast.error("Something went wrong. Please try again later.");
-      console.error(err);
+      // authServices turns API errors into a user-facing message (e.g. email already in use).
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again later.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 via-sky-50 to-blue-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-6">
-
-      <div className="w-full max-w-md bg-white/80 dark:bg-slate-800/90 backdrop-blur-xl shadow-2xl shadow-teal-900/5 dark:shadow-black/30 rounded-3xl p-8 sm:p-10 border border-white/50 dark:border-slate-700">
-
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-2">
-            Join <span className="text-teal-600">MoodMate</span>
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400">
-            Start your journey towards better mental wellbeing today.
-          </p>
+    <AuthShell
+      title="Start your journal"
+      subtitle="A quiet place to notice how you feel. It takes a few seconds a day."
+      footer={
+        <>
+          Already have an account?{" "}
+          <Link to="/login" className="font-medium text-primary hover:underline">
+            Log in
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSignUp} className="space-y-5" noValidate>
+        <div>
+          <label htmlFor="signup-name" className={authLabelClass}>
+            Your name
+          </label>
+          <Input id="signup-name" name="name" autoComplete="name" placeholder="Asha" value={formData.name} onChange={handleChange} disabled={isLoading} className={authInputClass} />
+        </div>
+        <div>
+          <label htmlFor="signup-email" className={authLabelClass}>
+            Email
+          </label>
+          <Input id="signup-email" name="email" type="email" autoComplete="email" placeholder="hello@example.com" value={formData.email} onChange={handleChange} disabled={isLoading} className={authInputClass} />
+        </div>
+        <div>
+          <label htmlFor="signup-password" className={authLabelClass}>
+            Password
+          </label>
+          <Input id="signup-password" name="password" type="password" autoComplete="new-password" placeholder="••••••••" value={formData.password} onChange={handleChange} disabled={isLoading} className={authInputClass} />
         </div>
 
-        <form onSubmit={handleSignUp} className="space-y-5">
-          {/* Name */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
-              Full Name
-            </label>
-            <Input
-              name="name"
-              placeholder="John Doe"
-              value={formData.name}
-              onChange={handleChange}
-              disabled={isLoading}
-              className="h-12 rounded-xl bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-slate-100 dark:placeholder-slate-500 focus:border-teal-500 focus:ring-teal-500/20 transition-all"
-            />
-          </div>
+        {error && (
+          <p role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </p>
+        )}
 
-          {/* Email */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
-              Email Address
-            </label>
-            <Input
-              name="email"
-              placeholder="hello@example.com"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              disabled={isLoading}
-              className="h-12 rounded-xl bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-slate-100 dark:placeholder-slate-500 focus:border-teal-500 focus:ring-teal-500/20 transition-all"
-            />
-          </div>
-
-          {/* Password */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
-              Password
-            </label>
-            <Input
-              name="password"
-              placeholder="••••••••"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              disabled={isLoading}
-              className="h-12 rounded-xl bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 dark:text-slate-100 dark:placeholder-slate-500 focus:border-teal-500 focus:ring-teal-500/20 transition-all"
-            />
-          </div>
-
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full h-12 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-lg shadow-lg shadow-teal-200/50 transition-all hover:scale-[1.02] active:scale-[0.98] mt-2"
-          >
-            {isLoading ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span>Creating Account...</span>
-              </div>
-            ) : (
-              "Sign Up"
-            )}
-          </Button>
-        </form>
-
-        {/* Footer / Login Link */}
-        <p className="text-center text-slate-500 dark:text-slate-400 text-sm mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
-          Already have an account?{" "}
-          <Link
-            to="/login"
-            className="text-teal-600 font-semibold hover:text-teal-700 dark:hover:text-teal-400 hover:underline transition-colors"
-          >
-            Log In
-          </Link>
-        </p>
-      </div>
-    </div>
+        <Button type="submit" disabled={isLoading} className="mt-2 h-12 w-full rounded-full text-base">
+          {isLoading ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> Creating your account…
+            </>
+          ) : (
+            "Create account"
+          )}
+        </Button>
+      </form>
+    </AuthShell>
   );
 };
 

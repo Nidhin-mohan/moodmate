@@ -140,4 +140,48 @@ describe('Future-dated mood logs', () => {
 
     expect(res.body.data.totalLogs).toBe(1);
   });
+
+  it('leaves future logs that already exist out of the list, even with a later endDate', async () => {
+    const { token, userId } = await createAuthenticatedUser();
+    await request.post('/api/v1/mood').set(auth(token)).send(validMoodLog);
+    await MoodLog.create({ ...validMoodLog, user: userId, date: new Date('2999-01-01') });
+
+    const all = await request.get('/api/v1/mood').set(auth(token));
+    const fromToday = await request
+      .get(`/api/v1/mood?startDate=${new Date(Date.now() - 60_000).toISOString()}`)
+      .set(auth(token));
+    const wideEnd = await request.get('/api/v1/mood?endDate=3000-01-01').set(auth(token));
+
+    expect(all.body.total).toBe(1);
+    expect(fromToday.body.total).toBe(1);
+    expect(wideEnd.body.total).toBe(1);
+  });
+});
+
+describe('GET /api/v1/mood mood filter', () => {
+  it('matches the mood case-insensitively, so legacy lower-case logs are found', async () => {
+    const { token, userId } = await createAuthenticatedUser();
+    await MoodLog.create({ user: userId, mood: 'happy', date: new Date() });
+    await MoodLog.create({ user: userId, mood: 'Happy', date: new Date() });
+    await MoodLog.create({ user: userId, mood: 'Sad', date: new Date() });
+
+    const res = await request.get('/api/v1/mood?mood=HAPPY').set(auth(token));
+
+    expect(res.status).toBe(200);
+    expect(res.body.total).toBe(2);
+  });
+
+  it('matches the whole mood literally, not as a pattern or a prefix', async () => {
+    const { token, userId } = await createAuthenticatedUser();
+    await MoodLog.create({ user: userId, mood: 'Happy', date: new Date() });
+
+    const pattern = await request.get('/api/v1/mood?mood=.*').set(auth(token));
+    const prefix = await request.get('/api/v1/mood?mood=Hap').set(auth(token));
+    const paren = await request.get('/api/v1/mood?mood=(').set(auth(token));
+
+    expect(pattern.body.total).toBe(0);
+    expect(prefix.body.total).toBe(0);
+    expect(paren.status).toBe(200);
+    expect(paren.body.total).toBe(0);
+  });
 });

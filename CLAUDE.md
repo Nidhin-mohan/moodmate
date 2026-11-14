@@ -68,7 +68,9 @@ API base path: `/api/v1/`. Auth routes at `/api/v1/auth/`, mood routes at `/api/
 
 **Health endpoint**: `GET /health` — returns `{ success, status, db, uptime }`. Checks `mongoose.connection.readyState` (1 = connected). Returns 200 if healthy, 503 if unhealthy. Rate-limited to 10 req/min. Used for Docker health checks and load balancer probes.
 
-**Stats endpoint**: `GET /api/v1/mood/stats?days=30` (`days` 1–365, default 30) — `MoodLogRepository.getStatsByUser()` runs two parallel MongoDB aggregation pipelines — one for numeric averages (intensity, energy, sleep), one for mood-type breakdown. The window is `[now - days, now]`, so any future-dated legacy logs are ignored. All mood queries include `{ user: userId }` filter to enforce ownership.
+**Stats endpoint**: `GET /api/v1/mood/stats?days=30` (`days` 1–365, default 30) — `MoodLogRepository.getStatsByUser()` runs two parallel MongoDB aggregation pipelines — one for numeric averages (intensity, energy, sleep), one for mood-type breakdown. The window is `[now - days, now]`, so any future-dated legacy logs are ignored. All mood queries include `{ user: userId }` filter to enforce ownership. Each average is a number rounded to one decimal, or `null` when no log in the window recorded that field — never `0` for "no data".
+
+**Mood-only logs**: only `mood` is required. A quick log stores just the mood; every other field (intensity, energy, sleep, `exercise`, …) is present only if the user reported it, and is still range-checked when sent. `exercise` has no default, so "not recorded" ≠ "didn't exercise"; tag arrays default to `[]`. Every reader (client pages, stats, the weekly AI prompt and email via `computeWeeklyStats()`) must treat non-mood fields as possibly missing.
 
 **Mood dates**: create/update reject a `date` more than one day in the future (one day of slack for timezones).
 
@@ -81,7 +83,7 @@ API base path: `/api/v1/`. Auth routes at `/api/v1/auth/`, mood routes at `/api/
 | POST | `/api/v1/auth/login` | No (rate-limited) | Login, returns JWT |
 | GET | `/api/v1/auth/profile` | JWT | Get own profile |
 | POST | `/api/v1/mood` | JWT | Create mood log |
-| GET | `/api/v1/mood` | JWT | List logs (`page` ≥1, `limit` 1–100, `startDate`/`endDate` ISO, `mood`) |
+| GET | `/api/v1/mood` | JWT | List logs (`page` ≥1, `limit` 1–100, `startDate`/`endDate` ISO, `mood` — exact but case-insensitive). Never returns logs dated more than a day ahead. |
 | GET | `/api/v1/mood/stats` | JWT | Aggregated stats (`days` 1–365) |
 | GET | `/api/v1/mood/:id` | JWT | Get single log |
 | PUT | `/api/v1/mood/:id` | JWT | Update log |
@@ -101,7 +103,7 @@ React 18 + TypeScript + Vite 6 + Tailwind CSS v3 + shadcn/ui (new-york style, zi
 - **Services**: `services/authServices.ts`, `services/moodLogService.ts` and `services/adminService.ts` wrap API calls; pages never call `api` directly. Error pattern: catch `AxiosError`, extract `response.data.message`, throw plain `Error` with user-friendly fallback.
 - **UI**: shadcn/ui primitives in `components/ui/`, layout shell in `components/layout/`. All colors use CSS custom properties via `hsl(var(--xyz))` — theme changes only require updating CSS variables. Dark mode via Tailwind `class` strategy.
 - **Toast notifications**: react-toastify configured at top-right position with 3000ms auto-close. `showToast()` helper in `utils/toast.tsx` is callable from anywhere without hooks.
-- **Forms**: react-hook-form v7 + zodResolver + Zod for validation. Tag fields collected as comma-separated strings, converted to `string[]` in `onSubmit`.
+- **Forms**: react-hook-form v7 + zodResolver + Zod for the auth forms. Mood logging is not a form: tapping a mood face saves `{ mood }` at once, then an optional, skippable "Add details" flow sends `updateMoodLog(id, detailsPatch(saved, draft))` with only the fields still empty. Tags are chips that map straight to `string[]`. Moods are rendered and classified through the catalogue in `lib/moods.ts`. Details in `client/CLAUDE.md`.
 
 **Client routes** (from `routes/routes.json`):
 
@@ -279,7 +281,7 @@ User → EC2 (Docker: backend container) → MongoDB (external)
 - **`componentMap` typed as `any`**: The route config references components by string key. TypeScript can't narrow `componentMap[r.component]` to a valid React component without the `as any` escape hatch. This is a known compromise for the data-driven routing pattern.
 - **Separate tag arrays vs single tags array**: `tagsPeople`, `tagsPlaces`, `tagsEvents` are stored as three separate arrays rather than a flat `tags[]` with types. This makes aggregation queries simpler (no nested filtering) at the cost of a more rigid schema.
 - **Service layer error wrapping**: Services catch `AxiosError` and throw plain `Error`. This hides transport details from consumers but loses the original status code. The tradeoff favors simpler error handling in UI components.
-- **No update/delete exposed in UI**: Users cannot edit or delete mood logs from the frontend. Each mood change requires a new log entry. This is intentional — immutable logs preserve the full history needed for mood pattern analysis and prevent retroactive data manipulation.
+- **No edit/delete in UI (fill-blanks only)**: Users cannot edit or delete mood logs from the frontend; each mood change is a new log entry, so the full history stays trustworthy for pattern analysis. The single exception is "Add details" straight after a quick log, which may only fill fields still empty on the entry it just created (`detailsPatch`; `[]` counts as empty, `mood` is never sent). The rule is enforced on the client — the server's `PUT /mood/:id` accepts any field.
 - **Repository pattern with BaseRepository**: All DB access goes through repositories. A generic `BaseRepository<T>` provides CRUD for every collection; child repos only add custom queries. Services import from `repositories/`, never from `models/` (except type interfaces). To add a new collection: create model → extend `BaseRepository` → get full CRUD for free. If switching databases, only `BaseRepository` and child implementations need rewriting — services stay untouched.
 - **No MongoDB in docker-compose**: The compose file does not include a MongoDB service. This keeps the setup flexible (local Mongo, Atlas, or host-network instance) but requires users to provide their own `MONGO_URI`. For local dev, run MongoDB separately.
 - **User lookup on every authenticated request**: `authMiddleware` calls `userRepository.findByIdSecure()` on every request to verify the user still exists. This catches deleted users immediately but adds a DB round-trip per request. A cache or token-only approach would be faster but risks stale user state.
@@ -314,7 +316,7 @@ User → EC2 (Docker: backend container) → MongoDB (external)
 ### Scenario: Mood log creation returns 400 validation error
 **Likely cause**: Type mismatch between form data and Zod schema. Check:
 1. Tags fields (`tagsPeople`, `tagsPlaces`, `tagsEvents`) must be `string[]`, not comma-separated strings.
-2. `intensity` (1-10), `energyLevel` (1-10), `sleepHours` (0-24), `sleepQuality` (1-5) must be within their valid ranges.
+2. `intensity` (1-10), `energyLevel` (1-10), `sleepHours` (0-24), `sleepQuality` (1-5) are optional but must be within their valid ranges when sent.
 3. `mood` is a required string and must not be empty.
 
 ### Scenario: Server won't start — exits immediately

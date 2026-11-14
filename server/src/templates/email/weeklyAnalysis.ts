@@ -15,13 +15,24 @@ function statsRow(label: string, value: string | number): string {
   </tr>`;
 }
 
+function sleepRow(stats: WeeklyStats): string {
+  const { avgSleepHours: hours, avgSleepQuality: quality } = stats;
+  if (hours != null && quality != null)
+    return statsRow('Sleep', `${hours}h · quality ${quality} / 5`);
+  if (hours != null) return statsRow('Sleep', `${hours}h`);
+  if (quality != null) return statsRow('Sleep Quality', `${quality} / 5`);
+  return '';
+}
+
+// Rows appear only for metrics the user actually recorded this week.
 function buildStatsRows(stats: WeeklyStats): string {
   return [
-    statsRow('Mood Intensity', `${stats.avgIntensity} / 10`),
-    statsRow('Energy Level', `${stats.avgEnergyLevel} / 10`),
+    statsRow('Check-ins', `${stats.totalLogs}`),
+    stats.avgIntensity != null ? statsRow('Mood Intensity', `${stats.avgIntensity} / 10`) : '',
+    stats.avgEnergyLevel != null ? statsRow('Energy Level', `${stats.avgEnergyLevel} / 10`) : '',
     stats.avgStressLevel != null ? statsRow('Stress Level', `${stats.avgStressLevel} / 10`) : '',
     stats.avgAnxietyLevel != null ? statsRow('Anxiety Level', `${stats.avgAnxietyLevel} / 10`) : '',
-    statsRow('Sleep', `${stats.avgSleepHours}h · quality ${stats.avgSleepQuality} / 5`),
+    sleepRow(stats),
     statsRow('Exercise Days', `${stats.exerciseDays} of ${stats.totalLogs}`),
     stats.avgExerciseMinutes != null
       ? statsRow('Avg Exercise', `${stats.avgExerciseMinutes} min`)

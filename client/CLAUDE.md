@@ -84,7 +84,15 @@ Roles: `"public"` (unauthenticated), `"user"`, `"therapist"` and `"admin"`. In `
 
 ### Forms
 
-`react-hook-form` v7 + `zodResolver` + Zod for validation. Tag fields (people, places, events) are collected as comma-separated strings in the form and converted to `string[]` in `onSubmit` before calling the API.
+Auth forms use `react-hook-form` v7 + `zodResolver` + Zod.
+
+**Mood logging** (`pages/moodTracking/MoodTrackingForm.tsx`) is a quick log plus optional steps, not one form:
+1. Tapping a face (`MoodPicker`) immediately calls `createMoodLog({ mood })` — only the mood is stored. The dashboard hero does the same and navigates here with `state.saved`.
+2. "Add details" walks four skippable steps (intensity → energy & sleep → what's going on → notes). "Skip" clears that step's fields.
+3. Saving sends `updateMoodLog(id, detailsPatch(saved, draft))`. `detailsPatch()` (`lib/detailsPatch.ts`) returns only fields still empty on the saved entry (`[]` counts as empty) and never `mood`; an empty patch sends nothing.
+- Tags are chips (`ChipInput`) mapped straight to `string[]`; suggestions come from `tagSuggestions()` over recent logs (`GET /mood?limit=100`), de-duplicated case-insensitively.
+- Support after a log comes from `supportLevel(mood, intensity?)` (`lib/support.ts`): low mood → "nudge"; low mood with intensity ≥ 7 → "full" screen with **sample** helplines (`lib/supportResources.ts` — placeholders, labelled as such).
+- Every mood is rendered and classified via the catalogue in `lib/moods.ts` (case-insensitive; unknown legacy moods get a fallback face and are never "low"). Every non-mood field on a log may be missing — show only what was recorded.
 
 ## Path Alias
 
@@ -129,7 +137,7 @@ The GitHub Actions CD pipeline (`cd-frontend.yml`):
 - **localStorage auth vs httpOnly cookies**: Simpler to implement and works across subdomains. Vulnerable to XSS. `withCredentials: true` on Axios is set defensively for a potential future migration to cookie-based auth.
 - **Hard redirect on 401 vs React navigation**: Axios interceptors can't access React context or hooks. `window.location.assign("/login")` forces a full page reload, losing in-memory state, but guarantees a clean application state on session expiry. Credential endpoints are excluded so a wrong password doesn't reload the login form.
 - **`componentMap` typed as `any`**: TypeScript can't narrow `componentMap[stringKey]` to a valid React component type. The `as any` cast is the pragmatic escape hatch for the data-driven routing pattern.
-- **No edit/delete in mood UI**: Immutable mood logs preserve full history for pattern analysis and prevent retroactive data manipulation. Users log again if their mood changes. The server has full CRUD — the UI restriction is intentional.
+- **No edit/delete in mood UI (fill-blanks only)**: Logs preserve full history for pattern analysis and must not be rewritten after the fact. There is no edit or delete button; users log again if their mood changes. The single exception is "Add details" straight after a quick log, which may only fill fields still empty on the entry it just created (`detailsPatch`). This is enforced on the client — the server's `PUT` accepts any field.
 - **API fallback to `"/api/v1"`**: When `VITE_API_BASE_URL` is not set, the client uses relative `/api/v1` paths. In Docker this works because nginx proxies `/api/` to the backend. In local dev it would fail — so the env var must be set for `npm run dev`.
 
 ## Lessons Learned
@@ -137,7 +145,8 @@ The GitHub Actions CD pipeline (`cd-frontend.yml`):
 - **localStorage key consistency**: The token key used by AuthContext and the Axios interceptor must match exactly (both use `"token"`). A mismatch silently breaks all authenticated requests.
 - **Vite env var prefix**: Must use `VITE_` prefix (not `REACT_APP_`). Wrong prefix means the var is silently `undefined` at runtime. `import.meta.env` values are replaced at build time — they're baked into the bundle.
 - **API path alignment**: The base URL includes `/api/v1`, so service calls use relative paths like `/auth/login` and `/mood`, not full paths. Getting this wrong causes silent 404s.
-- **Form-to-API type conversion**: Backend expects `string[]` for tag fields, form collects `string`. The `split(",").map(s => s.trim()).filter(Boolean)` conversion must happen before calling the service.
+- **Form-to-API type conversion**: Backend expects `string[]` for tag fields — chips already produce arrays; never send a comma-separated string.
+- **Animated step transitions keep the old step clickable**: with `AnimatePresence mode="wait"`, the exiting step's buttons stay in the DOM for the exit animation. Handlers must check they still belong to the current step and read state from refs, or a quick double tap acts on a stale step. Tests should wait for the next step's text before clicking.
 - **Docker port differs from dev**: `npm run dev` serves at `localhost:5173`, but Docker compose maps the frontend to `localhost:3000` (nginx on container port 80 → host port 3000). Don't confuse the two.
 - **`VITE_API_BASE_URL` is build-time only**: Changing this env var after the Vite build has no effect — the value is already inlined in the JS bundle. Requires a full rebuild (or Docker image rebuild) to change.
 

@@ -3,6 +3,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { AuthShell } from "@/components/layout/AuthShell";
+import { authInputClass, authLabelClass } from "@/components/layout/authStyles";
 import { login as loginRequest } from "@/services/authServices";
 
 const Login = () => {
@@ -33,93 +35,59 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-6">
+    <AuthShell
+      title="Welcome back"
+      subtitle="Good to see you. Let's check in."
+      footer={
+        <>
+          New here?{" "}
+          <Link to="/signup" className="font-medium text-primary hover:underline">
+            Create an account
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleLogin} className="space-y-5">
+        <div>
+          <label htmlFor="login-email" className={authLabelClass}>
+            Email
+          </label>
+          <Input
+            id="login-email"
+            placeholder="hello@example.com"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={authInputClass}
+          />
+        </div>
+        <div>
+          <label htmlFor="login-password" className={authLabelClass}>
+            Password
+          </label>
+          <Input
+            id="login-password"
+            placeholder="••••••••"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={authInputClass}
+          />
+        </div>
 
-      <div className="w-full max-w-md bg-card backdrop-blur-xl shadow-xl rounded-2xl p-8 sm:p-10 border border-border">
-
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-foreground mb-2">
-            Welcome Back
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            Continue your journey with{" "}
-            <span className="text-primary font-medium">MoodMate</span>.
+        {error && (
+          <p role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
           </p>
-        </div>
+        )}
 
-        <form onSubmit={handleLogin} className="space-y-5">
-
-          {/* Email Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground ml-1">
-              Email Address
-            </label>
-            <Input
-              placeholder="hello@example.com"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-12 rounded-xl bg-background border-border focus-visible:ring-ring text-base"
-            />
-          </div>
-
-          {/* Password Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground ml-1">
-              Password
-            </label>
-            <Input
-              placeholder="••••••••"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="h-12 rounded-xl bg-background border-border focus-visible:ring-ring text-base"
-            />
-          </div>
-
-          {error && (
-            <p
-              role="alert"
-              className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-3"
-            >
-              {error}
-            </p>
-          )}
-
-          {/* Login Button */}
-          <Button
-            type="submit"
-            disabled={submitting}
-            className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base shadow-md mt-2"
-          >
-            Log In
-          </Button>
-        </form>
-
-        {/* Forgot Password */}
-        <div className="mt-6 text-center">
-          <Link
-            to="/forgot-password"
-            className="text-muted-foreground hover:text-primary hover:underline text-sm transition-colors"
-          >
-            Forgot your password?
-          </Link>
-        </div>
-
-        {/* Sign Up Link */}
-        <p className="text-center text-muted-foreground text-sm mt-8 pt-6 border-t border-border">
-          Don't have an account?{" "}
-          <Link
-            to="/signup"
-            className="text-primary font-semibold hover:underline transition-colors"
-          >
-            Create one
-          </Link>
-        </p>
-
-      </div>
-    </div>
+        <Button type="submit" disabled={submitting} className="mt-2 h-12 w-full rounded-full text-base">
+          Log In
+        </Button>
+      </form>
+    </AuthShell>
   );
 };
 

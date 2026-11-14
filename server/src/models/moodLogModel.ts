@@ -13,8 +13,9 @@ export interface IMoodLog extends Document {
   user: mongoose.Types.ObjectId;
   mood: string;
   specificEmotion?: string;
-  intensity: number;
-  energyLevel: number;
+  // Only `mood` is guaranteed: quick logs store nothing else the user didn't report.
+  intensity?: number;
+  energyLevel?: number;
   stressLevel?: number; // 1-10, distinct from intensity
   anxietyLevel?: number; // 1-10, orthogonal to mood valence
   tagsPeople: string[];
@@ -22,9 +23,9 @@ export interface IMoodLog extends Document {
   tagsEvents: string[];
   socialQuality?: SocialQuality; // quality of social contact that day
   moodTriggerCategory?: MoodTriggerCategory;
-  sleepHours: number;
-  sleepQuality: number;
-  exercise: boolean;
+  sleepHours?: number;
+  sleepQuality?: number;
+  exercise?: boolean;
   exerciseMinutes?: number; // replaces the binary with actual duration
   notes?: string;
   reflections?: string;
@@ -41,13 +42,13 @@ const moodLogSchema: Schema = new Schema(
     },
     mood: { type: String, required: true },
     specificEmotion: { type: String },
-    intensity: { type: Number, required: true, min: 1, max: 10 },
-    energyLevel: { type: Number, required: true, min: 1, max: 10 },
+    intensity: { type: Number, min: 1, max: 10 },
+    energyLevel: { type: Number, min: 1, max: 10 },
     tagsPeople: { type: [String], default: [] },
     tagsPlaces: { type: [String], default: [] },
     tagsEvents: { type: [String], default: [] },
-    sleepHours: { type: Number, required: true, min: 0, max: 24 },
-    sleepQuality: { type: Number, required: true, min: 1, max: 5 },
+    sleepHours: { type: Number, min: 0, max: 24 },
+    sleepQuality: { type: Number, min: 1, max: 5 },
     stressLevel: { type: Number, min: 1, max: 10 },
     anxietyLevel: { type: Number, min: 1, max: 10 },
     socialQuality: { type: String, enum: ['isolated', 'neutral', 'connected'] },
@@ -55,7 +56,7 @@ const moodLogSchema: Schema = new Schema(
       type: String,
       enum: ['work', 'relationships', 'health', 'finances', 'environment', 'random'],
     },
-    exercise: { type: Boolean, default: false },
+    exercise: { type: Boolean },
     exerciseMinutes: { type: Number, min: 0 },
     notes: { type: String },
     reflections: { type: String },

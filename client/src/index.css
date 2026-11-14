@@ -2,103 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Sunrise pastel — validated in the prototype (branch prototype/redesign);
+   every text pair measured ≥ 4.5:1 (WCAG AA) in both themes. */
 @layer base {
   :root {
-    /* ── Page canvas ── */
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    /* ── Page canvas: peach cream ── */
+    --background: 26 100% 97%;
+    --foreground: 262 28% 18%;
 
     /* ── Card / elevated surface ── */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 262 28% 18%;
 
     /* ── Popover ── */
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 262 28% 18%;
 
-    /* ── Brand: teal ── */
-    --primary: 174 60% 35%;
+    /* ── Brand: deep lavender ── */
+    --primary: 262 38% 44%;
     --primary-foreground: 0 0% 100%;
 
-    /* ── Secondary surfaces ── */
-    --secondary: 210 20% 94%;
-    --secondary-foreground: 222 47% 11%;
+    /* ── Secondary surfaces: pale lavender ── */
+    --secondary: 262 40% 95%;
+    --secondary-foreground: 262 28% 18%;
 
     /* ── Muted: input fills, subtle chips, section insets ── */
-    --muted: 210 20% 94%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 262 30% 95%;
+    --muted-foreground: 262 10% 40%;
 
-    /* ── Accent: light teal tint for active/highlighted states ── */
-    --accent: 174 60% 95%;
-    --accent-foreground: 174 60% 28%;
+    /* ── Accent: lavender tint for active/highlighted states ── */
+    --accent: 268 70% 95%;
+    --accent-foreground: 262 38% 32%;
+
+    /* ── Soft: apricot surface for chips, nudges, tags ── */
+    --soft: 28 95% 90%;
+    --soft-foreground: 20 55% 28%;
+
+    /* ── Hero gradient stops: peach → lavender ── */
+    --hero-from: 22 100% 92%;
+    --hero-to: 268 70% 93%;
 
     /* ── Destructive ── */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 65% 45%;
+    --destructive-foreground: 0 0% 100%;
 
     /* ── Borders & inputs ── */
-    --border: 215 20% 89%;
-    --input: 215 20% 89%;
+    --border: 262 20% 89%;
+    --input: 262 20% 86%;
 
     /* ── Focus ring ── */
-    --ring: 174 60% 35%;
+    --ring: 262 38% 44%;
 
-    /* ── Charts (semantic mood/metric colors, not brand) ── */
-    --chart-1: 142 55% 45%;  /* green  — Happy    */
-    --chart-2: 45 90% 55%;   /* yellow — Excited  */
-    --chart-3: 215 16% 60%;  /* slate  — Neutral  */
-    --chart-4: 213 70% 55%;  /* blue   — Sad      */
-    --chart-5: 270 55% 60%;  /* purple — Anxious  */
+    /* ── Charts (follow the mood catalogue hues) ── */
+    --chart-1: 45 85% 55%;
+    --chart-2: 22 85% 58%;
+    --chart-3: 35 14% 60%;
+    --chart-4: 212 60% 58%;
+    --chart-5: 268 45% 62%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
   }
 
   .dark {
-    /* ── Page canvas: rich dark navy, not pitch black ── */
-    --background: 222 22% 8%;
-    --foreground: 210 20% 94%;
+    /* ── Page canvas: deep plum night ── */
+    --background: 258 24% 9%;
+    --foreground: 28 70% 94%;
 
-    /* ── Card: one step lighter than bg for visible depth ── */
-    --card: 222 22% 12%;
-    --card-foreground: 210 20% 94%;
+    --card: 258 20% 13%;
+    --card-foreground: 28 70% 94%;
 
-    /* ── Popover ── */
-    --popover: 222 22% 12%;
-    --popover-foreground: 210 20% 94%;
+    --popover: 258 20% 13%;
+    --popover-foreground: 28 70% 94%;
 
-    /* ── Brand: slightly brighter teal so it reads against dark bg ── */
-    --primary: 174 55% 46%;
-    --primary-foreground: 222 22% 8%;
+    /* ── Brand: soft lavender that reads on dark ── */
+    --primary: 264 70% 78%;
+    --primary-foreground: 258 30% 12%;
 
-    /* ── Secondary surfaces ── */
-    --secondary: 222 22% 17%;
-    --secondary-foreground: 210 20% 94%;
+    --secondary: 258 18% 18%;
+    --secondary-foreground: 28 70% 94%;
 
-    /* ── Muted: two steps above bg — inputs, chips, section insets ── */
-    --muted: 222 22% 17%;
-    --muted-foreground: 215 16% 58%;
+    --muted: 258 18% 18%;
+    --muted-foreground: 262 12% 70%;
 
-    /* ── Accent: dark teal tint ── */
-    --accent: 174 55% 12%;
-    --accent-foreground: 174 55% 60%;
+    --accent: 264 30% 20%;
+    --accent-foreground: 264 70% 85%;
 
-    /* ── Destructive ── */
-    --destructive: 0 62% 38%;
-    --destructive-foreground: 0 0% 98%;
+    --soft: 24 35% 20%;
+    --soft-foreground: 28 90% 80%;
 
-    /* ── Borders & inputs ── */
-    --border: 222 22% 20%;
-    --input: 222 22% 20%;
+    --hero-from: 20 35% 16%;
+    --hero-to: 264 30% 17%;
 
-    /* ── Focus ring ── */
-    --ring: 174 55% 46%;
+    --destructive: 0 72% 66%;
+    --destructive-foreground: 258 30% 10%;
 
-    /* ── Charts ── */
-    --chart-1: 142 50% 50%;
-    --chart-2: 45 85% 60%;
-    --chart-3: 215 16% 65%;
-    --chart-4: 213 65% 60%;
-    --chart-5: 270 50% 65%;
+    --border: 258 16% 21%;
+    --input: 258 16% 25%;
+
+    --ring: 264 70% 78%;
+
+    --chart-1: 45 60% 62%;
+    --chart-2: 22 60% 62%;
+    --chart-3: 35 10% 62%;
+    --chart-4: 212 45% 62%;
+    --chart-5: 268 35% 66%;
   }
 }
 
@@ -106,7 +113,19 @@
   * {
     @apply border-border;
   }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer utilities {
+  .bg-hero {
+    background: linear-gradient(140deg, hsl(var(--hero-from)), hsl(var(--hero-to)));
   }
 }

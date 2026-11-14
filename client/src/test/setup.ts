@@ -11,6 +11,9 @@ if (!("ResizeObserver" in globalThis)) {
   };
 }
 
+// jsdom doesn't implement scrolling; the app shell scrolls to the top on every page change.
+window.scrollTo = () => {};
+
 afterEach(() => {
   cleanup();
   localStorage.clear();

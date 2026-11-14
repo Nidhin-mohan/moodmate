@@ -1,5 +1,6 @@
 import { IUser } from '../models/userModel';
 import { BadRequestError, NotFoundError } from '../utils/customError';
+import { escapeRegex } from '../utils/escapeRegex';
 import { userRepository, ACTIVE_USER_FILTER } from '../repositories/userRepository';
 import type { ListUsersQuery, UpdateUserInput } from '../validations/adminValidation';
 
@@ -33,8 +34,6 @@ export interface ListUsersResult {
   page: number;
   pages: number;
 }
-
-const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function toAdminView(user: IUser): AdminUserView {
   const u = user as IUser & { createdAt: Date };

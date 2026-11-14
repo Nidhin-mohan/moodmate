@@ -14,8 +14,18 @@ import {
   ChevronRight,
   ArrowLeft,
 } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { ToolsGroup } from "@/lib/moods";
+import { TOOLS_GROUPS } from "@/lib/supportResources";
+import { HelplineCard } from "@/components/support/Support";
+
+/** One calm brand gradient for every exercise (text on it uses primary-foreground). */
+const BRAND_GRADIENT = "from-primary to-[hsl(var(--primary)/0.8)]";
+
+/** Grouped by how you feel, not by technique name. */
+const GROUP_ORDER: ToolsGroup[] = ["calm", "scattered", "kind"];
 
 /* ────────────────────────────────────────────
    Types
@@ -39,7 +49,7 @@ interface Tool {
   gradient: string;
   iconColor: string;
   bgAccent: string;
-  category: "breathing" | "grounding" | "mindfulness";
+  group: ToolsGroup;
 }
 
 const tools: Tool[] = [
@@ -51,10 +61,10 @@ const tools: Tool[] = [
       "A double inhale followed by a long exhale — the fastest known way to reduce stress in real time. Discovered by neuroscience research at Stanford.",
     duration: "1 min",
     icon: Wind,
-    gradient: "from-sky-500 to-indigo-500",
-    iconColor: "text-sky-500",
-    bgAccent: "bg-sky-50 dark:bg-sky-900/30",
-    category: "breathing",
+    gradient: BRAND_GRADIENT,
+    iconColor: "text-accent-foreground",
+    bgAccent: "bg-accent",
+    group: "calm",
   },
   {
     id: "box-breathing",
@@ -64,10 +74,10 @@ const tools: Tool[] = [
       "Breathe in a 4-4-4-4 pattern used by Navy SEALs and first responders to stay calm under pressure. Balances your nervous system in minutes.",
     duration: "2 min",
     icon: Box,
-    gradient: "from-violet-500 to-purple-600",
-    iconColor: "text-violet-500",
-    bgAccent: "bg-violet-50 dark:bg-violet-900/30",
-    category: "breathing",
+    gradient: BRAND_GRADIENT,
+    iconColor: "text-accent-foreground",
+    bgAccent: "bg-accent",
+    group: "calm",
   },
   {
     id: "grounding-54321",
@@ -77,10 +87,10 @@ const tools: Tool[] = [
       "Engage all five senses to pull yourself out of anxious thoughts and back into the present moment. Simple, powerful, works anywhere.",
     duration: "2 min",
     icon: Eye,
-    gradient: "from-emerald-500 to-teal-500",
-    iconColor: "text-emerald-500",
-    bgAccent: "bg-emerald-50 dark:bg-emerald-900/30",
-    category: "grounding",
+    gradient: BRAND_GRADIENT,
+    iconColor: "text-accent-foreground",
+    bgAccent: "bg-accent",
+    group: "scattered",
   },
   {
     id: "body-scan",
@@ -90,10 +100,10 @@ const tools: Tool[] = [
       "Systematically notice and release tension from head to toe. A fast way to reconnect with your body and let go of physical stress.",
     duration: "3 min",
     icon: Heart,
-    gradient: "from-rose-500 to-pink-500",
-    iconColor: "text-rose-500",
-    bgAccent: "bg-rose-50 dark:bg-rose-900/30",
-    category: "grounding",
+    gradient: BRAND_GRADIENT,
+    iconColor: "text-accent-foreground",
+    bgAccent: "bg-accent",
+    group: "kind",
   },
   {
     id: "mindful-moment",
@@ -103,10 +113,10 @@ const tools: Tool[] = [
       "A brief guided pause to observe your thoughts without judgment. Like pressing a gentle reset button for your mind.",
     duration: "1 min",
     icon: Leaf,
-    gradient: "from-amber-500 to-orange-500",
-    iconColor: "text-amber-500",
-    bgAccent: "bg-amber-50 dark:bg-amber-900/30",
-    category: "mindfulness",
+    gradient: BRAND_GRADIENT,
+    iconColor: "text-accent-foreground",
+    bgAccent: "bg-accent",
+    group: "scattered",
   },
   {
     id: "self-compassion",
@@ -116,18 +126,12 @@ const tools: Tool[] = [
       "Three simple steps from Dr. Kristin Neff's research: acknowledge difficulty, remember shared humanity, and offer yourself kindness.",
     duration: "2 min",
     icon: Brain,
-    gradient: "from-fuchsia-500 to-pink-500",
-    iconColor: "text-fuchsia-500",
-    bgAccent: "bg-fuchsia-50 dark:bg-fuchsia-900/30",
-    category: "mindfulness",
+    gradient: BRAND_GRADIENT,
+    iconColor: "text-accent-foreground",
+    bgAccent: "bg-accent",
+    group: "kind",
   },
 ];
-
-const categoryLabels: Record<string, string> = {
-  breathing: "Breathing",
-  grounding: "Grounding",
-  mindfulness: "Mindfulness",
-};
 
 /* ────────────────────────────────────────────
    Breathing Circle Component
@@ -167,7 +171,7 @@ const BreathingCircle: React.FC<BreathingCircleProps> = ({
         className={cn("absolute inset-8 rounded-full bg-gradient-to-br shadow-2xl flex items-center justify-center", gradient)}
         style={{ transform: `scale(${scale})`, transition: isPaused ? "none" : "transform 0.3s ease-out" }}
       >
-        <span className="text-white text-xl sm:text-2xl font-semibold tracking-wide select-none">
+        <span className="text-primary-foreground text-xl sm:text-2xl font-semibold tracking-wide select-none">
           {phase}
         </span>
       </div>
@@ -247,11 +251,11 @@ const PhysiologicalSighExercise: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-8 animate-in fade-in duration-500">
         <div className={cn("w-20 h-20 rounded-full bg-gradient-to-br flex items-center justify-center shadow-lg", gradient)}>
-          <Sparkles className="text-white" size={32} />
+          <Sparkles className="text-primary-foreground" size={32} />
         </div>
         <div className="text-center space-y-2">
-          <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Well done</h3>
-          <p className="text-slate-500 dark:text-slate-400 max-w-xs">
+          <h3 className="text-2xl font-bold text-foreground">Well done</h3>
+          <p className="text-muted-foreground max-w-xs">
             You completed 6 cycles of physiological sighing. Notice how your body feels now.
           </p>
         </div>
@@ -259,7 +263,7 @@ const PhysiologicalSighExercise: React.FC<{
           <Button variant="outline" onClick={reset} className="gap-2">
             <RotateCcw size={16} /> Again
           </Button>
-          <Button onClick={onComplete} className={cn("bg-gradient-to-r text-white border-0", gradient)}>
+          <Button onClick={onComplete} className={cn("bg-gradient-to-r text-primary-foreground border-0", gradient)}>
             Done
           </Button>
         </div>
@@ -271,7 +275,7 @@ const PhysiologicalSighExercise: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-8 animate-in fade-in duration-500">
         <div className="text-center space-y-4 max-w-md">
-          <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200">How it works</h3>
+          <h3 className="text-xl font-semibold text-foreground">How it works</h3>
           <div className="space-y-3 text-left">
             {[
               { n: 1, text: <><strong>Double inhale</strong> through your nose — one deep breath in, then a quick second sip of air on top</> },
@@ -279,15 +283,15 @@ const PhysiologicalSighExercise: React.FC<{
               { n: 3, text: <><strong>Repeat 6 times</strong> — about one minute total</> },
             ].map(({ n, text }) => (
               <div key={n} className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-400 flex items-center justify-center text-sm font-bold">
+                <span className="flex-shrink-0 w-7 h-7 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-sm font-bold">
                   {n}
                 </span>
-                <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">{text}</p>
+                <p className="text-foreground text-sm leading-relaxed">{text}</p>
               </div>
             ))}
           </div>
         </div>
-        <Button onClick={start} size="lg" className={cn("bg-gradient-to-r text-white border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}>
+        <Button onClick={start} size="lg" className={cn("bg-gradient-to-r text-primary-foreground border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}>
           <Play size={18} /> Begin
         </Button>
       </div>
@@ -298,10 +302,10 @@ const PhysiologicalSighExercise: React.FC<{
     <div className="flex flex-col items-center gap-8 py-4 animate-in fade-in duration-300">
       <BreathingCircle phase={currentPhase.name} progress={phaseProgress} gradient={gradient} isPaused={!isRunning} />
       <div className="text-center space-y-1">
-        <p className="text-sm text-slate-400 dark:text-slate-500 font-medium">
+        <p className="text-sm text-muted-foreground font-medium">
           Cycle {cycle + 1} of {SIGH_CYCLES}
         </p>
-        <div className="w-48 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+        <div className="w-48 h-1.5 bg-muted rounded-full overflow-hidden">
           <div
             className={cn("h-full bg-gradient-to-r rounded-full transition-all duration-300", gradient)}
             style={{ width: `${((cycle * SIGH_PHASES.length + phaseIdx + phaseProgress) / (SIGH_CYCLES * SIGH_PHASES.length)) * 100}%` }}
@@ -396,17 +400,17 @@ const BoxBreathingExercise: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-8 animate-in fade-in duration-500">
         <div className={cn("w-20 h-20 rounded-full bg-gradient-to-br flex items-center justify-center shadow-lg", gradient)}>
-          <Sparkles className="text-white" size={32} />
+          <Sparkles className="text-primary-foreground" size={32} />
         </div>
         <div className="text-center space-y-2">
-          <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Great work</h3>
-          <p className="text-slate-500 dark:text-slate-400 max-w-xs">
+          <h3 className="text-2xl font-bold text-foreground">Great work</h3>
+          <p className="text-muted-foreground max-w-xs">
             You completed {BOX_CYCLES} cycles of box breathing. Your nervous system is more balanced now.
           </p>
         </div>
         <div className="flex gap-3">
           <Button variant="outline" onClick={reset} className="gap-2"><RotateCcw size={16} /> Again</Button>
-          <Button onClick={onComplete} className={cn("bg-gradient-to-r text-white border-0", gradient)}>Done</Button>
+          <Button onClick={onComplete} className={cn("bg-gradient-to-r text-primary-foreground border-0", gradient)}>Done</Button>
         </div>
       </div>
     );
@@ -416,22 +420,22 @@ const BoxBreathingExercise: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-8 animate-in fade-in duration-500">
         <div className="text-center space-y-4 max-w-md">
-          <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200">How it works</h3>
+          <h3 className="text-xl font-semibold text-foreground">How it works</h3>
           <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
             {["Inhale 4s", "Hold 4s", "Exhale 4s", "Hold 4s"].map((label, i) => (
-              <div key={i} className="flex items-center justify-center gap-2 py-3 px-4 bg-violet-50 dark:bg-violet-900/30 rounded-xl text-violet-700 dark:text-violet-300 text-sm font-medium">
-                <span className="w-5 h-5 rounded-full bg-violet-200 dark:bg-violet-800 text-violet-700 dark:text-violet-300 flex items-center justify-center text-xs font-bold">
+              <div key={i} className="flex items-center justify-center gap-2 py-3 px-4 bg-accent rounded-xl text-accent-foreground text-sm font-medium">
+                <span className="w-5 h-5 rounded-full bg-primary/20 text-accent-foreground flex items-center justify-center text-xs font-bold">
                   {i + 1}
                 </span>
                 {label}
               </div>
             ))}
           </div>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">
+          <p className="text-muted-foreground text-sm">
             Repeat for {BOX_CYCLES} cycles (about 2 minutes)
           </p>
         </div>
-        <Button onClick={start} size="lg" className={cn("bg-gradient-to-r text-white border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}>
+        <Button onClick={start} size="lg" className={cn("bg-gradient-to-r text-primary-foreground border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}>
           <Play size={18} /> Begin
         </Button>
       </div>
@@ -442,7 +446,7 @@ const BoxBreathingExercise: React.FC<{
     <div className="flex flex-col items-center gap-8 py-4 animate-in fade-in duration-300">
       <div className="relative w-56 h-56 sm:w-64 sm:h-64">
         <svg viewBox="0 0 200 200" className="w-full h-full">
-          <rect x="20" y="20" width="160" height="160" rx="16" fill="none" stroke="#e2e8f0" strokeWidth="4" />
+          <rect x="20" y="20" width="160" height="160" rx="16" fill="none" stroke="hsl(var(--border))" strokeWidth="4" />
           {[
             { x1: 20, y1: 20, x2: 180, y2: 20 },
             { x1: 180, y1: 20, x2: 180, y2: 180 },
@@ -457,7 +461,7 @@ const BoxBreathingExercise: React.FC<{
                 x1={line.x1} y1={line.y1}
                 x2={isActive ? line.x1 + (line.x2 - line.x1) * phaseProgress : isPast ? line.x2 : line.x1}
                 y2={isActive ? line.y1 + (line.y2 - line.y1) * phaseProgress : isPast ? line.y2 : line.y1}
-                stroke={isActive ? "url(#boxGrad)" : isPast ? "#a78bfa" : "#e2e8f0"}
+                stroke={isActive ? "url(#boxGrad)" : isPast ? "hsl(var(--primary) / 0.5)" : "hsl(var(--border))"}
                 strokeWidth={isActive ? "6" : "4"}
                 strokeLinecap="round"
               />
@@ -482,20 +486,20 @@ const BoxBreathingExercise: React.FC<{
           })()}
           <defs>
             <linearGradient id="boxGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#8b5cf6" />
-              <stop offset="100%" stopColor="#7c3aed" />
+              <stop offset="0%" stopColor="hsl(var(--primary))" />
+              <stop offset="100%" stopColor="hsl(var(--primary))" />
             </linearGradient>
           </defs>
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-4xl font-bold text-violet-600">{countdown}</span>
-          <span className="text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">{currentPhase.name}</span>
+          <span className="text-4xl font-bold text-primary">{countdown}</span>
+          <span className="text-sm font-medium text-muted-foreground mt-1">{currentPhase.name}</span>
         </div>
       </div>
 
       <div className="text-center space-y-1">
-        <p className="text-sm text-slate-400 dark:text-slate-500 font-medium">Cycle {cycle + 1} of {BOX_CYCLES}</p>
-        <div className="w-48 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+        <p className="text-sm text-muted-foreground font-medium">Cycle {cycle + 1} of {BOX_CYCLES}</p>
+        <div className="w-48 h-1.5 bg-muted rounded-full overflow-hidden">
           <div
             className={cn("h-full bg-gradient-to-r rounded-full transition-all duration-300", gradient)}
             style={{ width: `${((cycle * BOX_PHASES.length + phaseIdx + phaseProgress) / (BOX_CYCLES * BOX_PHASES.length)) * 100}%` }}
@@ -540,11 +544,11 @@ const GroundingExercise: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-8 animate-in fade-in duration-500">
         <div className={cn("w-20 h-20 rounded-full bg-gradient-to-br flex items-center justify-center shadow-lg", gradient)}>
-          <Sparkles className="text-white" size={32} />
+          <Sparkles className="text-primary-foreground" size={32} />
         </div>
         <div className="text-center space-y-2">
-          <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">You're grounded</h3>
-          <p className="text-slate-500 dark:text-slate-400 max-w-xs">
+          <h3 className="text-2xl font-bold text-foreground">You're grounded</h3>
+          <p className="text-muted-foreground max-w-xs">
             You've reconnected with the present moment through all five senses. Notice the calm.
           </p>
         </div>
@@ -552,7 +556,7 @@ const GroundingExercise: React.FC<{
           <Button variant="outline" onClick={() => { setStep(-1); setCompleted(false); }} className="gap-2">
             <RotateCcw size={16} /> Again
           </Button>
-          <Button onClick={onComplete} className={cn("bg-gradient-to-r text-white border-0", gradient)}>Done</Button>
+          <Button onClick={onComplete} className={cn("bg-gradient-to-r text-primary-foreground border-0", gradient)}>Done</Button>
         </div>
       </div>
     );
@@ -562,20 +566,20 @@ const GroundingExercise: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-8 animate-in fade-in duration-500">
         <div className="text-center space-y-4 max-w-md">
-          <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200">How it works</h3>
-          <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+          <h3 className="text-xl font-semibold text-foreground">How it works</h3>
+          <p className="text-muted-foreground text-sm leading-relaxed">
             You'll engage each of your five senses, one at a time, to anchor yourself
             in the present moment. Take your time with each step.
           </p>
           <div className="flex justify-center gap-3 flex-wrap">
             {GROUNDING_STEPS.map((s) => (
-              <span key={s.count} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium">
+              <span key={s.count} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-soft text-soft-foreground rounded-full text-xs font-medium">
                 <span>{s.emoji}</span> {s.count} {s.sense}
               </span>
             ))}
           </div>
         </div>
-        <Button onClick={() => setStep(0)} size="lg" className={cn("bg-gradient-to-r text-white border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}>
+        <Button onClick={() => setStep(0)} size="lg" className={cn("bg-gradient-to-r text-primary-foreground border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}>
           <Play size={18} /> Begin
         </Button>
       </div>
@@ -586,19 +590,19 @@ const GroundingExercise: React.FC<{
     <div className="flex flex-col items-center gap-8 py-4 animate-in fade-in slide-in-from-right-4 duration-300" key={step}>
       <div className="flex gap-2">
         {GROUNDING_STEPS.map((_, i) => (
-          <div key={i} className={cn("w-2.5 h-2.5 rounded-full transition-all duration-300", i < step ? "bg-emerald-400" : i === step ? "bg-emerald-500 w-8" : "bg-slate-200 dark:bg-slate-600")} />
+          <div key={i} className={cn("w-2.5 h-2.5 rounded-full transition-all duration-300", i < step ? "bg-primary/50" : i === step ? "bg-primary w-8" : "bg-border")} />
         ))}
       </div>
 
       <div className="w-full max-w-sm">
-        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-2xl p-8 text-center space-y-5 border border-emerald-100 dark:border-emerald-800/50">
+        <div className="bg-hero rounded-2xl p-8 text-center space-y-5 border border-border">
           <span className="text-5xl">{current.emoji}</span>
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/80 dark:bg-slate-700/80 rounded-full text-emerald-700 dark:text-emerald-300 text-xs font-bold tracking-wider uppercase">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-card/80 rounded-full text-foreground text-xs font-bold tracking-wider uppercase">
               {current.count} things you can {current.sense.toLowerCase()}
             </div>
-            <p className="text-slate-700 dark:text-slate-200 font-medium text-lg">{current.instruction}</p>
-            <p className="text-slate-400 dark:text-slate-500 text-sm italic">{current.examples}</p>
+            <p className="text-foreground font-medium text-lg">{current.instruction}</p>
+            <p className="text-muted-foreground text-sm italic">{current.examples}</p>
           </div>
         </div>
       </div>
@@ -610,7 +614,7 @@ const GroundingExercise: React.FC<{
         <Button
           onClick={() => { if (step < GROUNDING_STEPS.length - 1) { setStep(step + 1); } else { setCompleted(true); } }}
           size="sm"
-          className={cn("bg-gradient-to-r text-white border-0 gap-1", gradient)}
+          className={cn("bg-gradient-to-r text-primary-foreground border-0 gap-1", gradient)}
         >
           {step < GROUNDING_STEPS.length - 1 ? "Next" : "Finish"} <ChevronRight size={16} />
         </Button>
@@ -703,17 +707,17 @@ const GuidedExercise: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-8 animate-in fade-in duration-500">
         <div className={cn("w-20 h-20 rounded-full bg-gradient-to-br flex items-center justify-center shadow-lg", gradient)}>
-          <Sparkles className="text-white" size={32} />
+          <Sparkles className="text-primary-foreground" size={32} />
         </div>
         <div className="text-center space-y-2">
-          <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Beautiful</h3>
-          <p className="text-slate-500 dark:text-slate-400 max-w-xs">
+          <h3 className="text-2xl font-bold text-foreground">Beautiful</h3>
+          <p className="text-muted-foreground max-w-xs">
             Take a moment to notice how you feel now compared to when you started.
           </p>
         </div>
         <div className="flex gap-3">
           <Button variant="outline" onClick={reset} className="gap-2"><RotateCcw size={16} /> Again</Button>
-          <Button onClick={onComplete} className={cn("bg-gradient-to-r text-white border-0", gradient)}>Done</Button>
+          <Button onClick={onComplete} className={cn("bg-gradient-to-r text-primary-foreground border-0", gradient)}>Done</Button>
         </div>
       </div>
     );
@@ -723,19 +727,19 @@ const GuidedExercise: React.FC<{
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-8 animate-in fade-in duration-500">
         <div className="text-center space-y-4 max-w-md">
-          <h3 className="text-xl font-semibold text-slate-700 dark:text-slate-200">
+          <h3 className="text-xl font-semibold text-foreground">
             {steps.length} guided steps
           </h3>
-          <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+          <p className="text-muted-foreground text-sm leading-relaxed">
             Each step will display for a set time, then gently transition to the next.
             Find a comfortable position and let yourself be guided.
           </p>
-          <div className="flex items-center justify-center gap-2 text-sm text-slate-400 dark:text-slate-500">
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Timer size={14} />
             About {Math.ceil(steps.reduce((a, s) => a + s.duration, 0) / 60)} min total
           </div>
         </div>
-        <Button onClick={start} size="lg" className={cn("bg-gradient-to-r text-white border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}>
+        <Button onClick={start} size="lg" className={cn("bg-gradient-to-r text-primary-foreground border-0 gap-2 px-8 shadow-lg hover:shadow-xl transition-shadow", gradient)}>
           <Play size={18} /> Begin
         </Button>
       </div>
@@ -747,28 +751,28 @@ const GuidedExercise: React.FC<{
   return (
     <div className="flex flex-col items-center gap-8 py-4 animate-in fade-in duration-300" key={stepIdx}>
       <div className="w-full max-w-sm">
-        <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
           <div
             className={cn("h-full bg-gradient-to-r rounded-full transition-all duration-1000 ease-linear", gradient)}
             style={{ width: `${progressPercent}%` }}
           />
         </div>
-        <div className="flex justify-between mt-2 text-xs text-slate-400 dark:text-slate-500">
+        <div className="flex justify-between mt-2 text-xs text-muted-foreground">
           <span>Step {stepIdx + 1} of {steps.length}</span>
           <span>{timeLeft}s</span>
         </div>
       </div>
 
       <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-500" key={`card-${stepIdx}`}>
-        <div className="bg-white dark:bg-slate-700 rounded-2xl p-8 shadow-sm border border-slate-100 dark:border-slate-600 text-center space-y-4">
-          <h4 className="text-lg font-bold text-slate-800 dark:text-slate-100">{currentStep.title}</h4>
-          <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-sm">{currentStep.instruction}</p>
+        <div className="bg-card rounded-2xl p-8 shadow-sm border border-border text-center space-y-4">
+          <h4 className="text-lg font-bold text-foreground">{currentStep.title}</h4>
+          <p className="text-foreground leading-relaxed text-sm">{currentStep.instruction}</p>
         </div>
       </div>
 
       <div className="relative w-16 h-16">
         <svg viewBox="0 0 60 60" className="w-full h-full -rotate-90">
-          <circle cx="30" cy="30" r="26" fill="none" stroke="#f1f5f9" strokeWidth="4" />
+          <circle cx="30" cy="30" r="26" fill="none" stroke="hsl(var(--muted))" strokeWidth="4" />
           <circle
             cx="30" cy="30" r="26" fill="none" stroke="url(#timerGrad)" strokeWidth="4"
             strokeLinecap="round"
@@ -778,12 +782,12 @@ const GuidedExercise: React.FC<{
           />
           <defs>
             <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#14b8a6" />
-              <stop offset="100%" stopColor="#6366f1" />
+              <stop offset="0%" stopColor="hsl(var(--primary))" />
+              <stop offset="100%" stopColor="hsl(var(--primary) / 0.7)" />
             </linearGradient>
           </defs>
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-slate-600 dark:text-slate-300">
+        <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-foreground">
           {timeLeft}
         </span>
       </div>
@@ -796,7 +800,7 @@ const GuidedExercise: React.FC<{
 };
 
 /* ────────────────────────────────────────────
-   Tool Detail View (wrapper)
+   Tool Detail View (wrapper) — full-screen and distraction-free on phones
    ──────────────────────────────────────────── */
 
 const ToolDetail: React.FC<{
@@ -806,24 +810,29 @@ const ToolDetail: React.FC<{
   const handleComplete = () => onBack();
 
   return (
-    <div className="w-full max-w-xl mx-auto animate-in fade-in duration-300">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={tool.name}
+      className="fixed inset-0 z-[60] overflow-y-auto bg-background px-4 pb-10 pt-[max(1rem,env(safe-area-inset-top))] animate-in fade-in duration-300 sm:static sm:z-auto sm:mx-auto sm:max-w-xl sm:bg-transparent sm:p-0"
+    >
       <button
         onClick={onBack}
-        className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors mb-6 group"
+        className="group mb-4 flex min-h-[44px] items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
-        <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
-        Back to Tools
+        <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-0.5" />
+        Back to tools
       </button>
 
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+      <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
         <div className={cn("bg-gradient-to-r p-6 sm:p-8", tool.gradient)}>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
-              <tool.icon className="text-white" size={24} />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-foreground/20">
+              <tool.icon className="text-primary-foreground" size={24} />
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-white">{tool.name}</h2>
-              <p className="text-white/80 text-sm">{tool.duration} guided exercise</p>
+              <h2 className="font-serif text-xl font-medium text-primary-foreground sm:text-2xl">{tool.name}</h2>
+              <p className="text-sm text-primary-foreground">{tool.duration} guided exercise</p>
             </div>
           </div>
         </div>
@@ -857,25 +866,21 @@ const ToolCard: React.FC<{
 }> = ({ tool, onClick }) => (
   <button
     onClick={onClick}
-    className="group w-full text-left bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 sm:p-6 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-black/20 hover:border-slate-200 dark:hover:border-slate-600 transition-all duration-300 hover:-translate-y-0.5"
+    className="group w-full rounded-3xl border border-border bg-card p-5 text-left transition-colors hover:border-primary/40 hover:bg-accent/40"
   >
     <div className="flex items-start gap-4">
-      <div className={cn("flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110", tool.bgAccent)}>
+      <div className={cn("flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl", tool.bgAccent)}>
         <tool.icon className={tool.iconColor} size={22} />
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="font-semibold text-slate-800 dark:text-slate-100 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
-            {tool.name}
-          </h3>
-          <ChevronRight size={16} className="text-slate-300 dark:text-slate-600 group-hover:text-slate-500 dark:group-hover:text-slate-400 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+          <h3 className="font-medium text-foreground">{tool.name}</h3>
+          <ChevronRight size={16} className="flex-shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
         </div>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{tool.subtitle}</p>
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 line-clamp-2 leading-relaxed">{tool.description}</p>
-        <div className="flex items-center gap-1.5 mt-3">
-          <Timer size={12} className="text-slate-400 dark:text-slate-500" />
-          <span className="text-xs font-medium text-slate-400 dark:text-slate-500">{tool.duration}</span>
-        </div>
+        <p className="mt-0.5 text-sm text-muted-foreground">
+          {tool.subtitle} · {tool.duration}
+        </p>
+        <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">{tool.description}</p>
       </div>
     </div>
   </button>
@@ -887,54 +892,55 @@ const ToolCard: React.FC<{
 
 const Tools: React.FC = () => {
   const [activeTool, setActiveTool] = useState<Tool | null>(null);
+  const { hash } = useLocation();
+
+  // The support nudge links to /tools#calm etc. — bring that group into view.
+  useEffect(() => {
+    if (activeTool || !hash) return;
+    document.getElementById(hash.slice(1))?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  }, [hash, activeTool]);
 
   if (activeTool) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      <div className="mx-auto max-w-[720px] px-4 py-6 sm:px-8 sm:py-10">
         <ToolDetail tool={activeTool} onBack={() => setActiveTool(null)} />
       </div>
     );
   }
 
-  const categories = Object.keys(categoryLabels) as Array<keyof typeof categoryLabels>;
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 animate-in fade-in duration-500">
-      {/* Hero */}
-      <div className="text-center mb-10 sm:mb-14">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-teal-50 dark:bg-teal-900/30 rounded-full text-teal-700 dark:text-teal-300 text-xs font-semibold tracking-wider uppercase mb-4">
-          <Sparkles size={14} />
-          Wellness Toolkit
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-          Tools for your mind
-        </h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-3 max-w-lg mx-auto text-sm sm:text-base leading-relaxed">
-          Quick, science-backed exercises to calm your nervous system,
-          ground your thoughts, and reset your day.
-        </p>
-      </div>
+    <div className="mx-auto max-w-[720px] px-4 pb-24 pt-6 animate-in fade-in duration-500 sm:px-8 sm:pt-10">
+      <h1 className="font-serif text-[30px] font-medium text-foreground sm:text-[38px]">Tools for right now</h1>
+      <p className="mt-2 max-w-lg leading-relaxed text-muted-foreground">
+        Short, guided exercises. Pick whatever matches how you feel. There's no wrong choice.
+      </p>
 
-      {/* Categories */}
-      <div className="space-y-10">
-        {categories.map((cat) => {
-          const categoryTools = tools.filter((t) => t.category === cat);
-          return (
-            <div key={cat}>
-              <div className="flex items-center gap-3 mb-4">
-                <h2 className="text-sm font-bold text-slate-400 dark:text-slate-500 tracking-wider uppercase">
-                  {categoryLabels[cat]}
-                </h2>
-                <div className="flex-1 h-px bg-slate-100 dark:bg-slate-700" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {categoryTools.map((tool) => (
+      <div className="mt-10 space-y-12">
+        {GROUP_ORDER.map((group) => (
+          <section key={group} id={group} aria-labelledby={`group-${group}`} className="scroll-mt-24">
+            <h2 id={`group-${group}`} className="font-serif text-xl text-foreground">
+              {TOOLS_GROUPS[group].title}
+            </h2>
+            <p className="mb-4 mt-1 text-sm text-muted-foreground">{TOOLS_GROUPS[group].blurb}</p>
+            <div className="grid grid-cols-1 gap-3">
+              {tools
+                .filter((t) => t.group === group)
+                .map((tool) => (
                   <ToolCard key={tool.id} tool={tool} onClick={() => setActiveTool(tool)} />
                 ))}
-              </div>
             </div>
-          );
-        })}
+          </section>
+        ))}
+
+        <section id="support" aria-labelledby="support-heading" className="scroll-mt-24">
+          <h2 id="support-heading" className="font-serif text-xl text-foreground">
+            Need support?
+          </h2>
+          <p className="mb-4 mt-1 text-sm text-muted-foreground">
+            You don't have to handle everything on your own. Reaching out is a strong thing to do.
+          </p>
+          <HelplineCard />
+        </section>
       </div>
     </div>
   );
