@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
 import { Plus } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
@@ -13,14 +14,21 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { isLoggedIn } = useAuth();
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   const showFab = isLoggedIn && !NO_FAB.includes(pathname);
+
+  // A new page starts at the top (the browser would otherwise keep the old scroll position).
+  // Links with a #hash (e.g. /tools#calm) scroll to their target instead.
+  useEffect(() => {
+    if (!hash) window.scrollTo(0, 0);
+  }, [pathname, hash]);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
       <main className="flex-1">{children}</main>
-      <footer className="px-4 pb-8 pt-4 text-center text-xs text-muted-foreground">
+      {/* On phones, leave room under the footer so the floating "+" never covers it. */}
+      <footer className={cn("px-4 pb-8 pt-4 text-center text-xs text-muted-foreground", showFab && "pb-24 md:pb-8")}>
         MoodMate is a self-reflection tool, not a substitute for professional care.{" "}
         <Link to="/tools#support" className="underline underline-offset-2 hover:text-foreground">
           Need support?

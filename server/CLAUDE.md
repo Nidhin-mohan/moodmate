@@ -67,7 +67,7 @@ Base path: `/api/v1/`
 | POST | `/api/v1/auth/login` | No (rate-limited: 20 req/15min) | Login, returns JWT |
 | GET | `/api/v1/auth/profile` | JWT | Get own profile |
 | POST | `/api/v1/mood` | JWT | Create mood log |
-| GET | `/api/v1/mood` | JWT | List logs (Zod-validated query: `page` ≥1, `limit` 1–100, `startDate`/`endDate` dates, `mood` string) |
+| GET | `/api/v1/mood` | JWT | List logs (Zod-validated query: `page` ≥1, `limit` 1–100, `startDate`/`endDate` dates, `mood` string matched whole and case-insensitively via an escaped regex). The date is always capped at now + 1 day, so far-future legacy logs never appear. |
 | GET | `/api/v1/mood/stats` | JWT | Aggregated stats (`days` 1–365, default 30; two parallel aggregation pipelines) |
 | GET | `/api/v1/mood/:id` | JWT | Get single log |
 | PUT | `/api/v1/mood/:id` | JWT | Update log |

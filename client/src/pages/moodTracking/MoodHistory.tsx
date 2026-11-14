@@ -5,10 +5,11 @@ import { MoodFace } from "@/components/mood/MoodFace";
 import { EntryCard } from "@/components/mood/EntryCard";
 import { ChoiceChips } from "@/components/mood/ScalePicker";
 import { MOODS, resolveMood } from "@/lib/moods";
+import { rangeStart, type JournalRange } from "@/lib/journalRange";
 import { cn } from "@/lib/utils";
 
 type Tab = "journal" | "trends";
-type Range = "week" | "month" | "all";
+type Range = JournalRange;
 
 const LIMIT = 10;
 const DAY_MS = 86_400_000;
@@ -54,7 +55,8 @@ function Journal() {
   useEffect(() => {
     const params: MoodLogFilters = { page, limit: LIMIT };
     if (mood) params.mood = mood;
-    if (range !== "all") params.startDate = new Date(Date.now() - (range === "week" ? 7 : 30) * DAY_MS).toISOString();
+    const start = rangeStart(range);
+    if (start) params.startDate = start.toISOString();
     setLoading(true);
     setFailed(false);
     getAllMoodLogs(params)
@@ -343,7 +345,7 @@ export default function MoodHistory() {
             aria-controls={`panel-${t}`}
             onClick={() => selectTab(t)}
             className={cn(
-              "min-h-[40px] rounded-full px-5 text-sm font-medium transition-colors",
+              "min-h-[44px] rounded-full px-5 text-sm font-medium transition-colors",
               tab === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
             )}
           >

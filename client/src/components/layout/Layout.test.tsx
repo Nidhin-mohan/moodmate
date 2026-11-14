@@ -58,6 +58,20 @@ describe("App shell", () => {
     auth.value = { ...auth.value, user: { name: "Asha", role: "user" } };
   });
 
+  it("starts each new page at the top, but leaves #hash links to scroll to their target", async () => {
+    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    renderAt("/mood-history");
+    scrollTo.mockClear();
+
+    const desktopTools = screen.getAllByRole("link", { name: "Tools" })[0];
+    await userEvent.click(desktopTools);
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+
+    scrollTo.mockClear();
+    await userEvent.click(screen.getByRole("link", { name: "Need support?" }));
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+
   it("has no floating button for logged-out visitors", () => {
     auth.value = { ...auth.value, isLoggedIn: false };
     renderAt("/tools");

@@ -94,7 +94,7 @@ const Navbar = () => {
                   aria-haspopup="menu"
                   aria-expanded={avatarOpen}
                   onClick={() => setAvatarOpen((o) => !o)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-soft font-medium text-soft-foreground"
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-soft font-medium text-soft-foreground"
                 >
                   {initial}
                 </button>
@@ -124,7 +124,7 @@ const Navbar = () => {
               <NavLink to="/tools" className={linkClass}>
                 Tools
               </NavLink>
-              <button type="button" onClick={toggleTheme} aria-label={themeLabel} className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:bg-accent">
+              <button type="button" onClick={toggleTheme} aria-label={themeLabel} className="flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground hover:bg-accent">
                 <ThemeIcon size={18} />
               </button>
               <NavLink to="/login" className={linkClass}>

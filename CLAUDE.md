@@ -83,7 +83,7 @@ API base path: `/api/v1/`. Auth routes at `/api/v1/auth/`, mood routes at `/api/
 | POST | `/api/v1/auth/login` | No (rate-limited) | Login, returns JWT |
 | GET | `/api/v1/auth/profile` | JWT | Get own profile |
 | POST | `/api/v1/mood` | JWT | Create mood log |
-| GET | `/api/v1/mood` | JWT | List logs (`page` ≥1, `limit` 1–100, `startDate`/`endDate` ISO, `mood`) |
+| GET | `/api/v1/mood` | JWT | List logs (`page` ≥1, `limit` 1–100, `startDate`/`endDate` ISO, `mood` — exact but case-insensitive). Never returns logs dated more than a day ahead. |
 | GET | `/api/v1/mood/stats` | JWT | Aggregated stats (`days` 1–365) |
 | GET | `/api/v1/mood/:id` | JWT | Get single log |
 | PUT | `/api/v1/mood/:id` | JWT | Update log |

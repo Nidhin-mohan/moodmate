@@ -6,7 +6,7 @@ import type { AggregatedStats } from './types';
 // ─── MoodLog-specific filter shape ───────────────────────────────
 export interface MoodLogFilter {
   user?: string;
-  mood?: string;
+  mood?: string | RegExp;
   date?: {
     $gte?: Date;
     $lte?: Date;

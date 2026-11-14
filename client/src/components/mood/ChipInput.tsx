@@ -57,7 +57,7 @@ export function ChipInput({ label, value, onChange, suggestions = [], placeholde
               type="button"
               onClick={() => onChange(value.filter((v) => v !== tag))}
               aria-label={`Remove ${tag}`}
-              className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-background/40"
+              className="-my-2 flex h-11 w-11 items-center justify-center rounded-full hover:bg-background/40"
             >
               <X size={14} />
             </button>
@@ -81,7 +81,7 @@ export function ChipInput({ label, value, onChange, suggestions = [], placeholde
               key={s}
               type="button"
               onClick={() => add(s)}
-              className="min-h-[36px] rounded-full border border-dashed border-border px-3 text-sm text-muted-foreground hover:border-primary hover:text-foreground"
+              className="min-h-[44px] rounded-full border border-dashed border-border px-3 text-sm text-muted-foreground hover:border-primary hover:text-foreground"
             >
               + {s}
             </button>

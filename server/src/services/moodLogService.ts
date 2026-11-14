@@ -1,5 +1,8 @@
 import { IMoodLog } from '../models/moodLogModel';
 import { NotFoundError } from '../utils/customError';
+import { escapeRegex } from '../utils/escapeRegex';
+
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 import { moodLogRepository, MoodLogFilter } from '../repositories/moodLogRepository';
 import type { QueryOptions } from '../repositories/types';
 import type {
@@ -52,15 +55,18 @@ export const getAllMoodsService = async (
   // Build typed filter — service says WHAT it wants, repo handles HOW
   const filter: MoodLogFilter = { user: userId };
 
-  if (startDate || endDate) {
-    const dateFilter: { $gte?: Date; $lte?: Date } = {};
-    if (startDate) dateFilter.$gte = startDate;
-    if (endDate) dateFilter.$lte = endDate;
-    filter.date = dateFilter;
-  }
+  // Never list far-future legacy logs: new dates are capped at now + 1 day on create/update,
+  // so anything later is bad data (stats ignore it too). A tighter endDate still wins.
+  const latest = new Date(Date.now() + ONE_DAY_MS);
+  const dateFilter: { $gte?: Date; $lte: Date } = {
+    $lte: endDate && endDate < latest ? endDate : latest,
+  };
+  if (startDate) dateFilter.$gte = startDate;
+  filter.date = dateFilter;
 
+  // Moods are free strings and legacy data is lower-case ("happy"), so match case-insensitively.
   if (mood) {
-    filter.mood = mood;
+    filter.mood = new RegExp(`^${escapeRegex(mood)}$`, 'i');
   }
 
   // One call → gets data + total count. No hand-rolling Promise.all.
